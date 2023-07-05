@@ -13,7 +13,7 @@
 <br>
    <img src="https://i.ibb.co/Fwk65L4/LIFE.png" width="95">
 
-   <p class="pl-k">Hello niggea</p>
+   <p style="color: red">Hello niggea</p>
 
    <h3 align="center">Life.JS</h3>
 
