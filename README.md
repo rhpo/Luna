@@ -7,7 +7,8 @@
 [![Linkedin][linkedin-shield]][linkedin-url]
 [![Discord][discord-shield]][discord-url]
  
-# Life.JS &nbsp;&horbar;&nbsp; Gaming in JavaScript.
+# Life.JS &nbsp;&horbar;&nbsp; A High-Level dynamically typed versatile language for elegant programming and streamlined scripting.
+
 <div align="center">
 <br>
    <img src="https://i.ibb.co/Fwk65L4/LIFE.png" width="95">
