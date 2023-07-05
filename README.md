@@ -13,7 +13,7 @@
 
 <div align="center">
 <br>
-   <img src="/luna.png" width="140">
+   <img src="/luna3.png" width="140">
 
    <h3 align="center">Luna</h3>
 
