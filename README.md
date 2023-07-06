@@ -1,4 +1,4 @@
-###### NOTE: This README.md file is temporarily placeholdes the repo, please be patient and refer to the code below.
+###### NOTE: This README.md file temporarily placeholdes the repo, please be patient for the author to document Luna and refer to the code below at the meanwhile.
 
 
 [![Contributors][contributors-shield]][contributors-url]
