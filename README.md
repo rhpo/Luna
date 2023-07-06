@@ -129,7 +129,7 @@ console.log(output); // object {RuntimeValue}
 
 fn read book {
 
-  print("Reading {book}..."")
+  print("Reading {book}...")
 }
 
 read("Luna Docs") # Reading Luna Docs...
