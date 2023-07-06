@@ -117,7 +117,7 @@ npm install -g lunascript   #  COMING SOON...
  ```js
 import { luna } from 'lunascript';
 
-let output = luna.run(luna_code);
+let output = luna.run(lunascript);
 
 console.log(output); // object {RuntimeValue}
 ```
