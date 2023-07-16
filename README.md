@@ -241,7 +241,7 @@ print(doubled)   // Output: `4`
 $$e^x=\sum_{n=0}^{\infty}\frac{x^n}{n!}$$
 ```rust
 
-# Taylor Series...
+# The Maclaurin series of the exponential function e^x:
 
 fn expo x {
   precision = 100
@@ -252,7 +252,7 @@ fn expo x {
 
     result += x**n / factorial(n)
 
-    n++
+    n += 1
   }
 
   result
@@ -268,11 +268,11 @@ $$\psi(x) = \frac{e^{2x}}{4x} + x^2 + 4x + 3!$$
 
 x = 1
 
-psi_x: react<x> = exp(2*x) / 4*x + x**2 + 4*x + factorial(3)
+psi_x: react<x> = (E ** 2 * x) / 4*x + x**2 + 4*x + factorial(3)
 
 x = 2
 
-print(doubled)   // Output: `4`
+print(psi_x)   // Output: `25.38905609893...`
 
 ```
 
