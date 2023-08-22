@@ -249,6 +249,7 @@ out fn sum x y {    // out fn ...
 // Export variable (using the out action):
 x: out = 5  // x: out = ...
             //    ^^^
+```
 
 #### ✱ Implementing Math in Luna:
 
