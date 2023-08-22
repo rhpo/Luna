@@ -242,13 +242,31 @@ print(doubled)   // Output: `4`
 ```rust
 
 // Export function:
-out fn sum x y {    // out fn ...
-   return x + y     // ^^^ 
-}                   // This keyword exports the function...
+out fn sum x y {
+^^^
+   return x + y  
+}         
 
 // Export variable (using the out action):
-x: out = 5  // x: out = ...
-            //    ^^^
+x: out = 5
+   ^^^        
+```
+
+#### ✱ Importing variables & functions:
+```rust
+
+// Import a module:
+use "maths.lnx" as math;
+
+// Import specific components:
+use (cos, sin as Sinus, tan, PI as pi) from "math.lnx";   // Modules have extension ".lnx"...
+
+
+// Call a file without importing it:
+tap "file.ln";
+
+// Embedding a file into the current code (code-preprocessor):
+embed "file.ln";
 ```
 
 #### ✱ Implementing Math in Luna:
