@@ -1,4 +1,4 @@
-import { Luna, createContext } from "./luna";
+import { Luna, createContext } from "./src/luna";
 
 export default {
   Luna,
