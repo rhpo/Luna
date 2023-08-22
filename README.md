@@ -119,7 +119,7 @@ npm install -g lunascript   #  COMING SOON...
 <br><br>
 
  ```js
-import { Luna, createContext, MK: Macro } from 'lunascript';
+import { Luna, ... } from 'lunascript';
 
 let luna = new Luna();
 let output = luna.run(lunascript);
