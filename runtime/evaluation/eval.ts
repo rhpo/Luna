@@ -1,0 +1,1148 @@
+import colors from "colors";
+import PATH from "node:path";
+import fs from "node:fs";
+import {
+  ActionAssignmentExpr,
+  AssignmentExpr,
+  BinaryExpr,
+  CallExpr,
+  DebugStatement,
+  EqualityExpr,
+  Expression,
+  ForStatement,
+  FunctionDeclaration,
+  IFStatement,
+  Identifier,
+  InequalityExpr,
+  LogicalExpr,
+  MemberExpr,
+  MemberExprX,
+  NullishAssignmentExpression,
+  NumericLiteral,
+  NumericalAssignmentExpression,
+  ObjectLiteral,
+  Program,
+  StringLiteral,
+  TapStatement,
+  TernaryExpr,
+  TypegetExpr,
+  UnaryExpr,
+  UseStatement,
+  WhileStatement,
+} from "../../lib/ast";
+import Environment from "../../lib/env";
+import { Err } from "../../lib/error";
+import { Luna, createContext } from "../../luna";
+import { evaluate } from "../interpreter";
+import {
+  FNVal,
+  MK,
+  NativeFNVal,
+  ObjectValue,
+  PROTO,
+  RuntimeValue,
+} from "../values";
+import { colorize } from "../../lib/ui";
+
+import systemDefaults from "./../../lib/sys";
+
+let originalPath = "./";
+
+export function evalulateProgram(
+  program: Program,
+  env: Environment,
+  origin?: string
+): RuntimeValue {
+  if (origin) {
+    originalPath = origin;
+  }
+
+  let lastEvaluated: RuntimeValue = MK.nil();
+
+  for (const statement of program.body) {
+    lastEvaluated = evaluate(statement, env);
+  }
+
+  return lastEvaluated;
+}
+
+export function evalNumericBE(
+  arg0: number,
+  arg1: number,
+  operator: string
+): RuntimeValue {
+  let result = 0;
+
+  switch (operator) {
+    case "+":
+      result = arg0 + arg1;
+      break;
+
+    case "-":
+      result = arg0 - arg1;
+      break;
+
+    case "*":
+      result = arg0 * arg1;
+      break;
+
+    case "/":
+      // if (arg1 === 0) {
+      //   throw Err("MathError", "Division by ZERO, which is impossible.");
+      // }
+      result = arg0 / arg1;
+      break;
+
+    case "%":
+      result = arg0 % arg1;
+      break;
+
+    case "^":
+    case "**":
+      result = arg0 ** arg1;
+      break;
+  }
+
+  return MK.number(result);
+}
+
+export function evalLogicalBE(
+  arg0: number,
+  arg1: number,
+  operator: string
+): RuntimeValue {
+  let result = 0;
+
+  switch (operator) {
+    case "&":
+      result = arg0 & arg1;
+      break;
+
+    case "|":
+      result = arg0 | arg1;
+      break;
+
+    case ">>":
+      result = arg0 >> arg1;
+      break;
+
+    case "<<":
+      result = arg0 << arg1;
+      break;
+  }
+
+  return MK.number(result);
+}
+
+export function evaluateEqualityExpression(
+  binOp: EqualityExpr,
+  env: Environment
+): RuntimeValue {
+  const leftHS = evaluate(binOp.left, env);
+  const rightHS = evaluate(binOp.right, env);
+
+  return evalEQ(leftHS.value, rightHS.value, binOp.operator);
+}
+export function evalEQ(
+  arg0: number,
+  arg1: number,
+  operator: string
+): RuntimeValue {
+  let result = false;
+
+  switch (operator) {
+    case "==":
+      result = arg0 == arg1;
+      break;
+    case "!=":
+      result = arg0 != arg1;
+      break;
+  }
+
+  return MK.bool(result);
+}
+
+export function evalLogicalExpression(
+  binOp: LogicalExpr,
+  env: Environment
+): RuntimeValue {
+  const leftHS = evaluate(binOp.left, env);
+
+  if (leftHS.value) {
+    const rightHS = evaluate(binOp.right, env);
+
+    return evalLE(leftHS.value, rightHS.value, binOp.operator);
+  } else return leftHS;
+}
+export function evalLE(
+  arg0: number,
+  arg1: number,
+  operator: string
+): RuntimeValue {
+  let result: any;
+
+  switch (operator) {
+    case "&&":
+      result = arg0 && arg1;
+      break;
+
+    case "||":
+      result = arg0 || arg1;
+      break;
+  }
+
+  let type = typeof result;
+
+  switch (type) {
+    case "number":
+      return MK.number(result);
+
+    case "boolean":
+      return MK.bool(result);
+
+    case "string":
+      return MK.string(result);
+
+    case "object":
+      if (result == null) return MK.nil();
+      return MK.object(result);
+  }
+
+  return result;
+}
+
+export function evalulateInequalityExpression(
+  binOp: InequalityExpr,
+  env: Environment
+): RuntimeValue {
+  const leftHS = evaluate(binOp.left, env);
+  const rightHS = evaluate(binOp.right, env);
+
+  if (leftHS.type == "number" && rightHS.type === "number") {
+    return evalINEQ(leftHS.value, rightHS.value, binOp.operator);
+  } else {
+    throw Err(
+      "ValueError",
+      `Cannot compare inequalities of hand sides: '${leftHS.type}' ${binOp.operator} '${rightHS.type}'`
+    );
+  }
+
+  // return MK.NaN();
+}
+export function evalINEQ(
+  arg0: number,
+  arg1: number,
+  operator: string
+): RuntimeValue {
+  let result = false;
+
+  switch (operator) {
+    case "<":
+      result = arg0 < arg1;
+      break;
+
+    case ">":
+      result = arg0 > arg1;
+      break;
+
+    case "<=":
+      result = arg0 <= arg1;
+      break;
+
+    case ">=":
+      // if (arg1 === 0) {
+      //   throw Err("MathError", "Division by ZERO, which is impossible.");
+      // }
+      result = arg0 >= arg1;
+      break;
+  }
+
+  return MK.bool(result);
+}
+
+export function evaluateBinExpression(
+  binOp: BinaryExpr,
+  env: Environment
+): RuntimeValue {
+  const leftHS = evaluate(binOp.left, env);
+  const rightHS = evaluate(binOp.right, env);
+
+  let operator = binOp.operator;
+
+  if (leftHS.type == "number" && rightHS.type === "number") {
+    if (!["<<", ">>", "&", "|"].includes(operator)) {
+      return evalNumericBE(leftHS.value, rightHS.value, operator);
+    } else return evalLogicalBE(leftHS.value, rightHS.value, operator);
+  } else if (leftHS.type === "string" && rightHS.type === "number") {
+    switch (operator) {
+      case "*":
+        if (rightHS.value > 0 && rightHS.value !== Infinity) {
+          return MK.string(leftHS.value.repeat(rightHS.value));
+        } else throw Err("ArgError", "Invalid string repeat count");
+
+      case "-":
+        return MK.string(leftHS.value.slice(0, -rightHS.value));
+
+      case "+":
+        return MK.string(leftHS.value.toString() + rightHS.value.toString());
+
+      default:
+        throw Err(
+          "OperationError",
+          `Invalid operation type: ${leftHS.type} ${operator} ${rightHS.type}`
+        );
+    }
+  } else if (
+    leftHS.type === "string" ||
+    (rightHS.type === "string" && operator === "+")
+  ) {
+    return MK.string(leftHS.value.toString() + rightHS.value?.toString() || "");
+  }
+
+  return MK.undefined();
+}
+
+export function evaluateTypeget(typeget: TypegetExpr, env: Environment) {
+  let value = evaluate(typeget.value, env);
+
+  return MK.string(value.type);
+}
+
+export function evaluateIdentifier(
+  arg0: Identifier,
+  env: Environment
+): RuntimeValue {
+  return env.lookupVar(arg0.value);
+}
+
+export function evaluateString(
+  arg0: StringLiteral,
+  env: Environment
+): RuntimeValue {
+  function replaceNestedVariables(str: string): string {
+    let result = "";
+    let isNested = false;
+    let isEscaped = false;
+    let variable = "";
+
+    for (let i = 0; i < str.length; i++) {
+      const char = str[i];
+
+      if (char === "{") {
+        if (!isEscaped) {
+          isNested = true;
+          variable = "";
+        }
+        isEscaped = false;
+      } else if (char === "}") {
+        if (isNested && !isEscaped) {
+          let lunaSBX = new Luna(env);
+          result +=
+            evaluate(lunaSBX.produceAST(variable), env).value.toString() || "";
+          isNested = false;
+          variable = "";
+          continue;
+        }
+        isEscaped = false;
+      } else if (char === "\\") {
+        isEscaped = !isEscaped;
+      } else {
+        if (isNested) {
+          variable += char;
+        } else {
+          result += char;
+        }
+        isEscaped = false;
+      }
+    }
+
+    return result;
+  }
+
+  return MK.string(replaceNestedVariables(arg0.value));
+}
+
+export function evaluateUseStatement(
+  statement: UseStatement,
+  env: Environment
+): RuntimeValue {
+  let imports = statement.imports;
+  let path = statement.path.value;
+
+  if (!path.endsWith(".ln") && !path.endsWith(".lnx")) {
+    path += fs.existsSync(path + ".ln")
+      ? ".ln"
+      : fs.existsSync(path + ".lnx")
+      ? ".lnx"
+      : ".ln";
+  }
+
+  let pathDetails = PATH.parse(path);
+
+  let fileName = pathDetails.base;
+  let fileDir = pathDetails.dir;
+  if (!fileDir) fileDir = "./";
+
+  let tempPath = originalPath;
+  originalPath = PATH.join(originalPath, fileDir);
+
+  let finalPath = PATH.join(originalPath, fileName);
+
+  function isFile(path: string): boolean {
+    try {
+      const stats = fs.statSync(path);
+      return stats.isFile();
+    } catch (error) {
+      // Handle errors, such as if the path does not exist
+      return false;
+    }
+  }
+
+  if (!fs.existsSync(finalPath) || !isFile(finalPath)) {
+    throw Err(
+      "FSError",
+      `Cannot find file ${fileName.underline} inside '${finalPath}'`
+    );
+  }
+
+  let code = fs.readFileSync(finalPath, "utf-8").toString();
+
+  let childEnv = createContext([]);
+
+  try {
+    let ast = new Luna().produceAST(code);
+
+    let c = evaluate(ast, childEnv);
+
+    let variables = new Map(
+      [...childEnv.variables.entries()].filter(([_key, value]) => {
+        return value.export;
+      })
+    );
+
+    if (Array.isArray(imports)) {
+      imports.forEach((i) => {
+        let { name, alternative } = i;
+
+        let variable = variables.get(name.value);
+
+        if (!variable) {
+          throw Err(
+            "ModuleError",
+            `'${fileName}' does not provide an export named: ${name}`
+          );
+        }
+
+        env.declareVar(alternative.value, variable, false, false, true);
+      });
+    } else {
+      let module = MK.object(Object.fromEntries(variables));
+
+      env.declareVar(imports.value, module, false, true);
+    }
+
+    originalPath = tempPath;
+
+    return c;
+  } catch (e) {
+    throw e + "\n  at → ".blue + originalPath;
+  }
+}
+
+export function evaluateTernaryExpr(
+  expression: TernaryExpr,
+  env: Environment
+): RuntimeValue {
+  let condition = evaluate(expression.condition, env).value;
+
+  return condition
+    ? evaluate(expression.consequent, env)
+    : evaluate(expression.alternate, env);
+}
+
+var p = 0;
+
+export function evaluateObjectExpression(
+  object: ObjectLiteral,
+  env: Environment
+): RuntimeValue {
+  p++;
+  const result = {
+    type: "object",
+    properties: new Map<string, RuntimeValue>(),
+  } as ObjectValue;
+
+  for (const { key, value, id, reactiveCBExpr } of object.properties) {
+    let runtimeVal = evaluate(value, env);
+    const action = reactiveCBExpr;
+
+    if (action) {
+      switch (action.name) {
+        case "const":
+          runtimeVal.informations.constant = true;
+          break;
+
+        case "var":
+          runtimeVal.informations.constant = false;
+          break;
+
+        case "react":
+          if ((runtimeVal as FNVal).body) {
+            runtimeVal = evaluateFunctionCall(
+              runtimeVal as FNVal,
+              [...action.args.map((i) => evaluate(i, env)), MK.nil()],
+              env
+            );
+          }
+
+          reactiveCBExpr.args.forEach((arg) => {
+            let i = env.lookupVar(arg.value);
+
+            i.reactiveCallbacks?.push({
+              variant: object,
+              variantID: id,
+              objectID: p,
+              env,
+              action: action,
+              value,
+
+              isMemberExpr: true,
+            });
+
+            env.declareVar(arg.value, i, false, false);
+          });
+
+          break;
+
+        default:
+          throw Err("SyntaxError", `Unknown action: ${action.name}`);
+      }
+    }
+
+    result.properties.set(key, runtimeVal);
+  }
+
+  return result;
+}
+
+function stringify(expr: Expression): string {
+  switch (expr.kind) {
+    case "BinaryExpr":
+      let binExpr = expr as BinaryExpr;
+      return (
+        stringify(binExpr.left) +
+        " " +
+        binExpr.operator +
+        " " +
+        stringify(binExpr.right)
+      );
+
+    case "Identifier":
+      return (expr as Identifier).value;
+
+    case "MemberExprX":
+      return (
+        (expr as MemberExprX).parent.value +
+        "." +
+        (expr as MemberExprX).properties.map((k) => k.value).join(".")
+      );
+
+    case "StringLiteral":
+      return '"' + (expr as StringLiteral).value + '"';
+
+    case "NullLiteral":
+      return "null";
+
+    case "UndefinedLiteral":
+      return "undefined";
+
+    case "NumericLiteral":
+      return (expr as NumericLiteral).value.toString();
+
+    case "CallExpr":
+      let cExpr = expr as CallExpr;
+      return (
+        stringify(cExpr.caller) +
+        `(${cExpr.args.map((e) => stringify(e)).join(", ")})`
+      );
+
+    case "DebugStatement":
+      return (
+        "debug " +
+        (expr as DebugStatement).props.map((e) => stringify(e)).join(", ")
+      );
+
+    case "FunctionDeclaration":
+      let fn = expr as FunctionDeclaration;
+      return (
+        "fn " +
+        fn.name +
+        " " +
+        fn.parameters.map((param) => param.assigne).join(" ") +
+        " { ... }"
+      );
+
+    case "AssignmentExpr":
+      return (
+        stringify((expr as AssignmentExpr).assigne) +
+        " = " +
+        stringify((expr as AssignmentExpr).value)
+      );
+
+    case "ActionAssignmentExpr":
+      return (
+        stringify((expr as ActionAssignmentExpr).assigne) +
+        `: ${(expr as ActionAssignmentExpr).action.name}${
+          (expr as ActionAssignmentExpr).action.args
+            ? "<" +
+              (expr as ActionAssignmentExpr).action.args
+                .map((e) => stringify(e))
+                .join(", ") +
+              ">"
+            : ""
+        } = ` +
+        stringify((expr as ActionAssignmentExpr).value)
+      );
+
+    default:
+      return JSON.stringify(expr, null, 3);
+  }
+}
+
+export function evaluateDebugStatement(
+  expression: DebugStatement,
+  env: Environment
+): RuntimeValue {
+  let lastValue: RuntimeValue = MK.undefined();
+
+  expression.props.forEach((prop) => {
+    lastValue = evaluate(prop, env);
+
+    if (!systemDefaults.script) {
+      console.log(
+        colors.bgYellow(stringify(prop).red) + ": " + colorize(lastValue)
+      );
+    } else console.warn(stringify(prop) + ":" + lastValue);
+  });
+
+  return lastValue;
+}
+
+export function evaluateCallExpr(
+  expression: CallExpr,
+  env: Environment
+): RuntimeValue {
+  let args = expression.args.map((arg) => {
+    return evaluate(arg, env);
+  });
+
+  const fn = evaluate(expression.caller, env);
+
+  if (fn.owner) {
+    args = [fn.owner, ...args];
+  }
+
+  if (fn.type == "native-fn") {
+    let result = (fn as NativeFNVal).call(args, env);
+    return result;
+  } else if (fn.type === "fn") {
+    let f = fn as FNVal;
+
+    const fnScope = new Environment(f.declarationEnv || env, {
+      in: "function",
+    });
+
+    fnScope.declareVar(f.name, f, false, false);
+    for (var i = 0; i < f.parameters.length; i++) {
+      const variable = f.parameters[i];
+
+      fnScope.declareVar(
+        variable.assigne as any as string,
+        args[i] || evaluate(variable.value, env),
+        false
+      );
+    }
+
+    let result: RuntimeValue = MK.undefined();
+
+    for (const state of f.body) {
+      result = evaluate(state, fnScope);
+
+      if (result.type === "return") {
+        return result.value;
+      }
+    }
+
+    return result;
+  } else {
+    if (expression.caller.kind === "MemberExprX") {
+      let caller = expression.caller as MemberExprX;
+
+      let s = "";
+
+      if (caller.properties) {
+        s = caller.properties.map((x) => x.value).join(".");
+      }
+
+      throw Err(
+        "RefError",
+        `'${caller.parent.value}${s !== "" ? "." + s : ""}' is not a function`
+      );
+    } else {
+      throw Err(
+        "RefError",
+        `'${expression.caller.value || fn.type}' is not a function`
+      );
+    }
+  }
+}
+
+export function evaluateFunctionCall(
+  expression: FNVal,
+  args: RuntimeValue[],
+  env: Environment
+): RuntimeValue {
+  const fn = expression;
+
+  let f = fn as FNVal;
+
+  const fnScope = f.declarationEnv || new Environment(env);
+
+  for (var i = 0; i < f.parameters.length; i++) {
+    const variable = f.parameters[i];
+
+    let value = args[i];
+
+    fnScope.declareVar(variable.assigne as any as string, value, false);
+  }
+
+  // fnScope.declareVar(f.name, f, false, false);
+
+  let result: RuntimeValue = MK.nil();
+
+  X: for (const state of f.body) {
+    result = evaluate(state, fnScope);
+
+    if (result.type === "return") {
+      return result.value;
+    }
+  }
+
+  return result;
+}
+
+export function evaluateIfStatement(
+  expression: IFStatement,
+  env: Environment
+): RuntimeValue {
+  const condition = evaluate(expression.test, env).value;
+
+  let ifEnv = new Environment(env, {
+    in: "if",
+  });
+
+  let result: RuntimeValue = MK.undefined();
+
+  if (condition) {
+    for (var s of expression.consequent) {
+      result = evaluate(s, ifEnv);
+
+      if (result.type === "return") {
+        result.value.returned = true;
+        return result;
+      }
+    }
+  } else if (expression.alternate) {
+    if (Array.isArray(expression.alternate)) {
+      for (var s of expression.alternate) {
+        result = evaluate(s, ifEnv);
+
+        if (result.type === "return") {
+          return result;
+        }
+      }
+    } else return evaluateIfStatement(expression.alternate, ifEnv);
+  }
+
+  return result;
+}
+
+export function evaluateForStatement(
+  expression: ForStatement,
+  env: Environment
+): RuntimeValue {
+  let forEnv = new Environment(env, {
+    in: "for",
+  });
+
+  let result: RuntimeValue = MK.undefined();
+
+  evaluate(expression.declaration, forEnv);
+
+  while (evaluate(expression.test, forEnv).value) {
+    for (var s of expression.body) {
+      result = evaluate(s, forEnv);
+
+      if (result.type === "return") {
+        result.value.returned = true;
+        return result;
+      }
+
+      evaluate(expression.increaser, forEnv);
+    }
+  }
+
+  return result;
+}
+
+export function evaluateWhileStatement(
+  expression: WhileStatement,
+  env: Environment
+): RuntimeValue {
+  let condition = evaluate(expression.test, env).value;
+
+  // let whileENV = new Environment(env);
+
+  while (condition) {
+    for (var s of expression.consequent) {
+      evaluate(s, env);
+    }
+    condition = evaluate(expression.test, env).value;
+  }
+
+  return MK.undefined();
+}
+
+export function evaluateAssignment(
+  assignment: AssignmentExpr,
+  env: Environment
+) {
+  let value = evaluate(assignment.value, env);
+
+  if (!["Identifier", "MemberExprX"].includes(assignment.assigne.kind)) {
+    throw Err("SyntaxError", `Invalid left-hand assignment`);
+  }
+
+  // if (assignment.assigne.kind === "MemberExprX") {
+  //   return env.declareObjectVar(
+  //     (assignment.assigne?.value as string) ||
+  //       (assignment.assigne as MemberExpr),
+  //     value
+  //   );
+  // }
+
+  // else
+
+  return env.declareVar(
+    (assignment.assigne?.value as string) ||
+      (assignment.assigne as MemberExprX),
+    value
+  );
+}
+
+export function evaluateActionAssignment(
+  assignment: ActionAssignmentExpr,
+  env: Environment
+) {
+  const action = assignment.action;
+  const value = evaluate(assignment.value, env);
+
+  switch (action.name) {
+    case "const":
+      return env.declareVar(
+        (assignment.assigne?.value as string) ||
+          (assignment.assigne as MemberExprX),
+        value,
+        true
+      );
+
+    case "var":
+      return env.declareVar(
+        (assignment.assigne?.value as string) ||
+          (assignment.assigne as MemberExprX),
+        value,
+        false
+      );
+
+    case "out":
+      value.export = true;
+      return env.declareVar(
+        (assignment.assigne?.value as string) ||
+          (assignment.assigne as MemberExprX),
+        value,
+        false
+      );
+
+    case "react":
+      let v: any;
+
+      if ((value as FNVal).body) {
+        v = evaluateFunctionCall(
+          value as FNVal,
+          [...action.args.map((i) => evaluate(i, env)), MK.nil()],
+          env
+        );
+      }
+
+      assignment.action.args.forEach((arg) => {
+        let i = env.lookupVar(arg.value);
+
+        i.reactiveCallbacks?.push({
+          variant: assignment.assigne,
+          env,
+          action: assignment.action,
+          value: assignment.value,
+
+          isMemberExpr: assignment.assigne.kind === "MemberExprX",
+        });
+
+        env.declareVar(arg.value, i, false, false);
+      });
+
+      if (assignment.assigne.kind !== "MemberExprX")
+        return env.declareVar(assignment.assigne.value, v || value, false);
+      else
+        return env.declareVar(
+          assignment.assigne as MemberExprX,
+          v || value,
+          false
+        );
+
+    default:
+      throw Err("SyntaxError", `Unknown action: ${action.name}`);
+  }
+}
+
+export function evaluateNullishAssignment(
+  assignment: NullishAssignmentExpression,
+  env: Environment
+) {
+  const value = evaluate(assignment.value, env);
+
+  if (!["Identifier", "MemberExpr"].includes(assignment.assigne.kind)) {
+    throw Err("SyntaxError", `Invalid left-hand assignment`);
+  }
+
+  let original = env.lookupVar(assignment.assigne.value);
+  if (original.type === "null") {
+    return env.assignVar(assignment.assigne.value, value);
+  } else return original;
+}
+
+export function evaluateMemberExprX(
+  expression: MemberExprX,
+  env: Environment
+): RuntimeValue {
+  // {
+  //   kind: 'MemberExprX',
+  //   parent: { kind: 'Identifier', value: 'a' },
+  //   properties: [
+  //     { kind: 'Identifier', value: 'b' },
+  //     { kind: 'Identifier', value: 'c' },
+  //     { kind: 'Identifier', value: 'd' }
+  //   ]
+  // }
+
+  let mainObj = env.lookupVar(
+    expression.parent.kind !== "Identifier"
+      ? expression.parent
+      : expression.parent.value
+  ) as ObjectValue;
+
+  if (mainObj.type !== "object") {
+    let proty = mainObj as RuntimeValue;
+    let properties = [...expression.properties];
+
+    if (proty.prototype) {
+      if (proty.prototype[properties[0].value])
+        proty.prototype[properties[0].value].owner = mainObj;
+
+      let lastProp: ObjectValue | RuntimeValue | undefined =
+        proty.prototype[properties[0].value];
+
+      properties.shift();
+
+      for (var i = 0; i < properties.length; i++) {
+        let prop = properties[i];
+
+        if (!lastProp || lastProp.type === "undefined") {
+          throw Err(
+            "NameError",
+            `Cannot read properties of an undefined value, READING: ${
+              [expression.parent]
+                .concat(properties)
+                .slice(0, i + 2)
+                .map((i) => i.value)
+                .join(" → ".green).white
+            }`
+          );
+        }
+
+        if (lastProp.properties && lastProp.properties.has(prop.value)) {
+          lastProp = lastProp.properties.get(prop.value) as ObjectValue;
+        } else if (lastProp.prototype && lastProp.prototype[prop.value]) {
+          lastProp = lastProp.prototype[prop.value];
+        } else lastProp = MK.undefined();
+      }
+
+      return lastProp || MK.undefined();
+    }
+
+    return MK.undefined();
+  } else {
+    let lastProp: ObjectValue | RuntimeValue | undefined = mainObj;
+
+    for (var i = 0; i < expression.properties.length; i++) {
+      let prop = expression.properties[i];
+
+      if (!lastProp || lastProp.type === "undefined") {
+        throw Err(
+          "NameError",
+          `Cannot read properties of an undefined value, READING: ${
+            [expression.parent]
+              .concat(expression.properties)
+              .slice(0, i + 2)
+              .map((i) => i.value)
+              .join(" → ".green).white
+          }`
+        );
+      }
+
+      if (lastProp.properties && lastProp.properties.has(prop.value)) {
+        lastProp = lastProp.properties.get(prop.value) as ObjectValue;
+      } else if (lastProp.prototype && lastProp.prototype[prop.value]) {
+        lastProp = lastProp.prototype[prop.value];
+      } else lastProp = MK.undefined();
+    }
+
+    return lastProp || MK.undefined();
+  }
+}
+
+export function evaluateNumericalAssignmentExpression(
+  assignment: NumericalAssignmentExpression,
+  env: Environment
+) {
+  let assigne = assignment.assigne;
+  let assigneValue = evaluate(assigne, env).value;
+
+  let right = evaluate(assignment.value, env).value;
+
+  let { operator } = assignment;
+
+  if (!["&=", "|="].includes(operator)) {
+    return env.declareVar(
+      assigne.value,
+      evalNumericBE(assigneValue, right, operator.substring(0, 1))
+    );
+  } else
+    return env.declareVar(
+      assigne.value,
+      evalLogicalBE(assigneValue, right, operator.substring(0, 1))
+    );
+}
+
+export function evaluateUnaryExpr(
+  expr: UnaryExpr,
+  env: Environment
+): RuntimeValue {
+  let result = evalUE(evaluate(expr.value, env), expr.operator);
+
+  let type = typeof result;
+
+  switch (type) {
+    case "number":
+      return MK.number(result as number);
+
+    default:
+    case "boolean":
+      return MK.bool(result as boolean);
+
+    case "string":
+      return MK.string(result as any as string);
+  }
+}
+
+function evalUE(arg: RuntimeValue, op: string) {
+  switch (op) {
+    case "!":
+      return !arg.value;
+
+    case "++":
+      return ++arg.value;
+
+    case "--":
+      return --arg.value;
+
+    case "+":
+      return +arg.value;
+
+    case "-":
+      return -arg.value;
+  }
+}
+
+export function evaluateTapStatement(
+  expression: TapStatement,
+  env: Environment
+): RuntimeValue {
+  let path = expression.path.value;
+
+  if (!path.endsWith(".ln") && !path.endsWith(".lnx")) {
+    path += fs.existsSync(path + ".ln")
+      ? ".ln"
+      : fs.existsSync(path + ".lnx")
+      ? ".lnx"
+      : ".ln";
+  }
+
+  function isFile(path: string): boolean {
+    try {
+      const stats = fs.statSync(path);
+      return stats.isFile();
+    } catch (error) {
+      // Handle errors, such as if the path does not exist
+      return false;
+    }
+  }
+
+  let pathDetails = PATH.parse(path);
+
+  let fileName = pathDetails.base;
+  let fileDir = pathDetails.dir;
+
+  path = PATH.join(originalPath, fileDir, fileName);
+
+  if (fs.existsSync(path) && isFile(path)) {
+    let tapCode = fs.readFileSync(path, "utf-8").toString();
+    let env = createContext([]);
+
+    try {
+      return new Luna(env).evaluate(tapCode);
+    } catch (e) {
+      throw e + `\n\n   at → `.blue + path.underline.gray;
+    }
+  } else throw Err("FSError", `'${path}' was not found on the FileSystem`);
+}
+
+export function evaluateFunctionDeclaration(
+  declaration: FunctionDeclaration,
+  env: Environment
+) {
+  const fn = {
+    type: "function",
+    name: declaration.name,
+    export: declaration.export,
+    parameters: declaration.parameters,
+    declarationEnv: env,
+    body: declaration.body,
+  };
+
+  let c = env.declareVar(
+    fn.name,
+    MK.func(fn.name, fn.parameters, fn.body, fn.export, env),
+    true
+  );
+
+  return c;
+}
