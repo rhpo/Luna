@@ -274,9 +274,9 @@ embed "file.ln";
 $$e^x=\sum_{n=0}^{\infty}\frac{x^n}{n!}$$
 ```rust
 
-use (fact as factorial) from 'factorial.lnx'
-
 # The Maclaurin series of the exponential function e^x:
+
+use (fact as factorial) from "factorial.lnx"
 
 fn expo x {
   precision = 100
