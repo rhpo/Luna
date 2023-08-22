@@ -68,7 +68,11 @@
 <br>
 <h2 name="news">&bull; 📰 News</h2>
 
-+ ✅ Added  support for __asyncronous__ ``lambda`` expressions.
++ ✅ Added support for __asyncronous__ ``lambda`` expressions.
++ ✅ Added "use" statements: ``use(external as custom) from 'file.lnx'``
++ ✅ Improved **speed & performance** ⚡.
++ ✅ Added ``embed`` statements, you can now **embed** code from *other files* inside your main file: ``embed "path/to/file.ln";``
++ ✅ Added TapStatements, to execute files without the need to import (performance optimisation):  ``tap "exec/this/code.ln";``
 <br>
 
 <br>
