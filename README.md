@@ -119,8 +119,9 @@ npm install -g lunascript   #  COMING SOON...
 <br><br>
 
  ```js
-import { luna } from 'lunascript';
+import { Luna, createContext, MK: Macro } from 'lunascript';
 
+let luna = new Luna();
 let output = luna.run(lunascript);
 
 console.log(output); // object {RuntimeValue}
@@ -144,11 +145,9 @@ read("Luna Docs") # Reading Luna Docs...
 ```rust
 
 fn sum x=(1) y=(1) {
-
   if x && y {
-    x + y
+    return x + y
   }
-
 }
 
 print(sum(2, 4)) # 6
@@ -239,6 +238,17 @@ print(doubled)   // Output: `4`
 
 ```
 
+#### ✱ Export variables & functions:
+```rust
+
+// Export function:
+out fn sum x y {    // out fn ...
+   return x + y     // ^^^ 
+}                   // This keyword exports the function...
+
+// Export variable (using the out action):
+x: out = 5  // x: out = ...
+            //    ^^^
 
 #### ✱ Implementing Math in Luna:
 
