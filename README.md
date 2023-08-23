@@ -4,7 +4,8 @@
 
 <div align="center">
 <br>
-   <img src="/assets/logo.png" width="140">
+   <img src="/assets/logo-styles/luna2_WHITE.png#gh-dark-mode-only" width="140">
+   <img src="/assets/logo-styles/luna-black-noborders.png#gh-light-mode-only" width="140">
 
    <h3 align="center">Luna</h3>
 
