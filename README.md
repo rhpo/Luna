@@ -9,12 +9,12 @@
    <h3 align="center">Luna</h3>
 
   <p align="center">
-    <strong>Luna: </strong> An <strong>elegant</strong>, versatile programming language with efficient scripting capabilities, built in TypeScript for simplicity and productivity in both general programming and automation tasks.
+    <strong>Luna: </strong> An <strong>elegant</strong>, versatile programming language with efficient scripting capabilities, built in <img src="https://cdn-icons-png.flaticon.com/512/5968/5968381.png" width="16" align="center"/> TypeScript for simplicity and productivity in both general programming and automation tasks 🤖.</p>
     <br />
-    <a href="https://github.com/rhpo/luna/tree/main/docs"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-     <a href="https://rhpo.github.io/luna/releases/">Get Releases</a>
+<a href="https://github.com/rhpo/luna/tree/main/docs"><strong>Explore the docs »</strong></a>
+<br />
+<br />
+ <a href="https://rhpo.github.io/luna/releases/">Get Releases</a>
      .
     <a href="https://rhpo.github.io/luna/examples/">View Examples</a>
     ·
