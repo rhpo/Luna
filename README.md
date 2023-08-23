@@ -14,7 +14,9 @@
     <a href="https://github.com/rhpo/luna/tree/main/docs"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://rhpo.github.io/luna/demo/mario-game/">View Examples</a>
+     <a href="https://rhpo.github.io/luna/releases/">Get Releases</a>
+     .
+    <a href="https://rhpo.github.io/luna/examples/">View Examples</a>
     ·
     <a href="https://github.com/rhpo/luna/issues">Report Bug</a>
     ·
