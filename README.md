@@ -7,7 +7,7 @@
    <!--img src="/assets/logo-styles/luna-noborders.png#gh-dark-mode-only" width="140">
    <img src="/assets/logo-styles/luna-noborders.png#gh-light-mode-only" width="140"-->
 
-   <img src="/assets/logo-styles/luna-noborders.png" width="140"-->
+   <img src="/assets/logo-styles/luna-noborders.png" width="140">
 
    <h3 align="center">Luna</h3>
 
