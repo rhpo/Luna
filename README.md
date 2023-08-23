@@ -92,6 +92,8 @@
 + ✅ Added TapStatements, to execute files without the need to import (performance optimisation):  ``tap "exec/this/code.ln";``
 <br>
 
+_____
+
 <br>
 <h2 name="about-the-project">&bull; 🔍 About The Project</h2>
 
@@ -132,25 +134,29 @@ Luna's functioning follows a precise sequence: first, the written code undergoes
  
 </div>
 
+<br>
 
 <br>
+
+____
+
+
 <h1 name="getting-started">&bull; 🛠️ Getting Started</h1>
 <strong name="nodejs">
-&nbsp;&nbsp;🌿 NodeJS <i>(for intellisence)</i> :
+&nbsp;&nbsp;🛠️ Install the Luna API 🌙</i> :
 </strong>
 <br><br>
 
- ```bash
-npm install -g lunascript   #  COMING SOON...
+```console
+luna:~$ npm i -g lunascript  # Installation (API & CLI)...
+luna:~$ luna --help          # Show Help Menu...
 ```
 
 <strong name="web">
-&nbsp;&nbsp;🌐 Web
-    <strong>&bull; JavaScript</strong>
-</strong>
+&nbsp;&nbsp;🌐 API <strong>&bull; TypeScript</strong></strong>
 <br><br>
 
- ```js
+ ```ts
 import { Luna, ... } from 'lunascript';
 
 let luna = new Luna();
