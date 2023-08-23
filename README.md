@@ -46,9 +46,7 @@
 
 </div>
 
-</center>
-
-<details>
+<details align="left">
   <summary>Table of Contents</summary>
   <ol>
      <li>
