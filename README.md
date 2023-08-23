@@ -1,14 +1,5 @@
 ###### NOTE: This README.md file temporarily placeholdes the repo, please be patient for the author to document Luna and refer to the code below at the meanwhile.
 
-
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
-[![Linkedin][linkedin-shield]][linkedin-url]
-[![Discord][discord-shield]][discord-url]
-
 # Luna 🌙 &nbsp;&horbar;&nbsp; A High-Level Programming language.
 
 <div align="center">
@@ -29,6 +20,20 @@
     ·
     <a href="mailto:luna@ramey.ml">Request Feature</a>
   </p>
+
+  <div align="center">
+
+
+     [![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
+[![Linkedin][linkedin-shield]][linkedin-url]
+[![Discord][discord-shield]][discord-url]
+
+
+  </div>
 
 </div>
 
