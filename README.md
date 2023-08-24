@@ -344,10 +344,10 @@ use (factorial, Log as log) from "math.lnx";
 theta = 1
 
 psi_theta: react<theta> = (E ** 2 * theta) / log(4 * theta) + theta**2 + factorial(2 * theta)
-print(psi_theta)   // Output: `3.72134752...`
+print(psi_theta)   // Output: `15.2729565249...`
 
 theta = 2
-print(psi_theta)   // Output: `25.38905609893...`
+print(psi_theta)   // Output: `68.4570428413...`
 
 ```
 
