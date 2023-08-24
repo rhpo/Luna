@@ -128,7 +128,7 @@ Luna's functioning follows a precise sequence: first, the written code undergoes
 
 <div align="center">
 
-### Luna Diagram representing the Architecture overview
+### Luna Diagram representing the Architecture Overview
 
 <img src="https://github.com/rhpo/Luna/assets/69460661/6f390f7f-8a43-41c9-9765-6ec50fbf8b47" width="700">
  
@@ -309,7 +309,7 @@ embed "file.ln";
 
 #### ✱ Implementing Math in Luna:
 
-$$e^x=\sum_{n=0}^{\infty}\frac{x^n}{n!}$$
+$$\Huge e^x = \sum_{n=0}^{\infty} \frac{x^n}{n!}$$
 ```rust
 
 # The Maclaurin series of the exponential function e^x:
@@ -336,12 +336,14 @@ print(expo(0)) # 1
 ```
 
 #### ✱ Implementing Luna's reactivity with Math:
-$$\psi(x) = \frac{e^{2x}}{4x} + x^2 + 4x + 3!$$
+$$\Huge \psi(x) = \frac{e^{2x}}{log(4x)} + x^2 + 2x!$$
 ```rust
+
+use (factorial, Log as log) from "math.lnx";
 
 x = 1
 
-psi_x: react<x> = (E ** 2 * x) / 4*x + x**2 + 4*x + factorial(3)
+psi_x: react<x> = (E ** 2 * x) / log(4 * x) + x**2 + factorial(2 * x)
 
 x = 2
 
