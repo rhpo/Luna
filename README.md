@@ -336,18 +336,18 @@ print(expo(0)) # 1
 ```
 
 #### ✱ Implementing Luna's reactivity with Math:
-$$\Huge \psi(x) = \frac{e^{2x}}{log(4x)} + x^2 + 2x!$$
+$$\Huge \psi(\theta) = \frac{e^{2\theta}}{log(4\theta)} + \theta^2 + 2\theta!$$
 ```rust
 
 use (factorial, Log as log) from "math.lnx";
 
-x = 1
+theta = 1
 
-psi_x: react<x> = (E ** 2 * x) / log(4 * x) + x**2 + factorial(2 * x)
+psi_theta: react<theta> = (E ** 2 * theta) / log(4 * theta) + theta**2 + factorial(2 * theta)
+print(psi_theta)   // Output: `3.72134752...`
 
-x = 2
-
-print(psi_x)   // Output: `25.38905609893...`
+theta = 2
+print(psi_theta)   // Output: `25.38905609893...`
 
 ```
 
