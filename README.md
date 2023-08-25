@@ -339,11 +339,11 @@ print(expo(0)) # 1
 $$\Huge \psi(\theta) = \frac{e^{2\theta}}{log(4\theta)} + \theta^2 + 2\theta!$$
 ```rust
 
-use (factorial, Log as log) from "math.lnx";
+use (E as e, factorial, Log as log) from "math.lnx";
 
 theta = 1
 
-psi_theta: react<theta> = (E ** 2 * theta) / log(4 * theta) + theta**2 + factorial(2 * theta)
+psi_theta: react<theta> = (e ** 2 * theta) / log(4 * theta) + theta**2 + factorial(2 * theta)
 print(psi_theta)   // Output: `15.2729565249...`
 
 theta = 2
