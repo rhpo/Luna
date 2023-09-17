@@ -159,6 +159,11 @@ luna:~$ luna --help          # Show Help Menu...
  ```ts
 import { Luna, ... } from 'lunascript';
 
+let script = `
+   name = input("What's your name? ");
+   print("Hello, {name}!")
+`;
+
 let luna = new Luna();
 let output = luna.run(lunascript);
 
