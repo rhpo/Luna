@@ -134,8 +134,21 @@ Luna's functioning follows a precise sequence: first, the written code undergoes
  
 </div>
 
-<br>
+### Red flags 🚩:
 
+**Luna** is 7.28x slower than **Python** (exactly 7.28060546875x)
+
+Relation between the runtime of Luna $(t_{l})$ and the runtime of Python $(t_{p})$ and the Luna-Python Time Scalar $(\Delta _{l,p})$
+
+
+
+$t_{p}(t_{l}) = \Delta _{l,p}t_{l}$
+
+
+Luna has a max of recursive function call of $n = 2428 \pm \Delta R, \ \Delta R \in \mathbb{Z} \ \Delta R \approx 1$
+
+
+<br>
 <br>
 
 ____
