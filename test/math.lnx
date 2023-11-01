@@ -3,9 +3,14 @@
 # Module: Math
 # Date: Tue Aug 22 2023 10:03:48
 
-# Make a function to calculate the absolute value of n
+# Absolute Function: to calculate the absolute value of n
 out fn abs n {
     n < 0 ? -n or n
+}
+
+# Approximately Equal function: returns equality of a and b at a certain precision (epsilon) => boolean
+out fn approx a b epsilon=(0.01) {
+  return abs(a - b) < epsilon
 }
 
 pi: out = math.pi
