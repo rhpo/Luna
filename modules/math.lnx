@@ -1,0 +1,322 @@
+
+PI: out = math.pi
+E:  out = math.e
+
+config: const = {
+	PRECISION: 16
+}
+
+out fn sum arr {
+	res = 0
+	each(arr, lambda c { res = res + c });
+	res
+}
+
+out fn sign n {
+	n < 0 ? -1 or 1
+}
+
+out fn abs n {
+	n * sign(n)
+}
+
+out fn pow a n=(2) {
+	a ** n
+}
+
+out fn sqrt a {
+	pow(a)
+}
+
+out fn div a b {
+	a / b
+}
+
+out fn add a b {
+	a + b
+}
+
+out fn sub a b {
+	a - b
+}
+
+out fn mod a b {
+	a % b
+}
+
+out fn fact n {
+	n < 2 ? 1 or n * fact(n - 1)
+}
+
+out fn cos x {
+	precision = config.PRECISION
+
+	res = 0
+
+	i = 0
+	while i < precision {
+		res = res + pow(-1, i) * pow(x, 2 * i) / fact(2 * i)
+		i = i + 1
+	}
+
+	res
+}
+
+out fn sin x {
+	precision = config.PRECISION
+
+	res = 0
+
+	i = 0
+	while i < precision {
+		res = res + pow(-1, i) * pow(x, 2 * i + 1) / fact(2 * i + 1)
+		i = i + 1
+	}
+
+	res
+}
+
+out fn tan x {
+	sin(x) / cos(x)
+}
+
+out fn cot x {
+	cos(x) / sin(x)
+}
+
+out fn sec x {
+	1 / cos(x)
+}
+
+out fn csc x {
+	1 / sin(x)
+}
+
+out fn arcsin x {
+	precision = config.PRECISION
+
+	res = 0
+
+	i = 0
+	while i < precision {
+		res = res + fact(2 * i) * pow(x, 2 * i + 1) / (pow(4, i) * pow(fact(i), 2) * (2 * i + 1))
+		i = i + 1
+	}
+
+	res
+}
+
+out fn arccos x {
+	pi / 2 - arcsin(x)
+}
+
+out fn arctan x {
+	precision = config.PRECISION
+
+	res = 0
+
+	i = 0
+	while i < precision {
+		res = res + pow(-1, i) * pow(x, 2 * i + 1) / (2 * i + 1)
+		i = i + 1
+	}
+
+	res
+}
+
+out fn arccot x {
+	pi / 2 - arctan(x)
+}
+
+out fn arcsec x {
+	arccos(1 / x)
+}
+
+out fn arccsc x {
+	arcsin(1 / x)
+}
+
+out fn exp x {
+	precision = config.PRECISION
+
+	res = 0
+
+	i = 0
+	while i < precision {
+		res = res + pow(x, i) / fact(i)
+		i = i + 1
+	}
+
+	res
+}
+
+out fn ln x {
+	precision = config.PRECISION
+
+	res = 0
+
+	i = 1
+	while i < precision {
+		res = res + pow(-1, i + 1) * pow(x - 1, i) / i
+		i = i + 1
+	}
+
+	res
+}
+
+out fn log a b {
+	ln(b) / ln(a)
+}
+
+out fn sinh x {
+	(exp(x) - exp(-x)) / 2
+}
+
+out fn cosh x {
+	(exp(x) + exp(-x)) / 2
+}
+
+out fn tanh x {
+	sinh(x) / cosh(x)
+}
+
+out fn coth x {
+	cosh(x) / sinh(x)
+}
+
+out fn sech x {
+	1 / cosh(x)
+}
+
+out fn csch x {
+	1 / sinh(x)
+}
+
+out fn arcsinh x {
+	ln(x + sqrt(pow(x, 2) + 1))
+}
+
+out fn arccosh x {
+	ln(x + sqrt(pow(x, 2) - 1))
+}
+
+out fn arctanh x {
+	ln((1 + x) / (1 - x)) / 2
+}
+
+out fn arccoth x {
+	ln((x + 1) / (x - 1)) / 2
+}
+
+out fn arcsech x {
+	ln((1 + sqrt(1 - pow(x, 2))) / x)
+}
+
+out fn arccsch x {
+	ln((1 + sqrt(1 + pow(x, 2))) / x)
+}
+
+out fn deg x {
+	x * 180 / pi
+}
+
+out fn rad x {
+	x * pi / 180
+}
+
+out fn grad x {
+	x * 200 / pi
+}
+
+out fn floor x {
+	x - x % 1
+}
+
+out fn ceil x {
+	x - x % 1 + 1
+}
+
+out fn round x {
+	x % 1 < 0.5 ? floor(x) or ceil(x)
+}
+
+out fn trunc x {
+	x % 1 < 0 ? ceil(x) or floor(x)
+}
+
+out fn frac x {
+	x % 1
+}
+
+out fn min a b {
+	a < b ? a or b
+}
+
+out fn max a b {
+	a > b ? a or b
+}
+
+out fn clamp x a b {
+	x < a ? a or x > b ? b or x
+}
+
+out fn rand {
+	precision = config.PRECISION
+
+	res = 0
+
+	i = 0
+	while i < precision {
+		res = res + (rand() % 10) / pow(10, i)
+		i = i + 1
+	}
+
+	res
+}
+
+out fn rand a b {
+	a + rand() % (b - a)
+}
+
+out fn integral f a b {
+	precision = config.PRECISION
+
+	res = 0
+
+	i = 0
+	while i < precision {
+		res = res + f(a + (b - a) * i / precision) * (b - a) / precision
+		i = i + 1
+	}
+
+	res
+}
+
+out fn derivative f x {
+	precision = config.PRECISION
+
+	res = 0
+
+	i = 0
+	while i < precision {
+		res = res + f(x + i / precision) - f(x - i / precision)
+		i = i + 1
+	}
+
+	res / precision
+}
+
+out fn limit f x {
+	precision = config.PRECISION
+
+	res = 0
+
+	i = 0
+	while i < precision {
+		res = res + f(x + i / precision)
+		i = i + 1
+	}
+
+	res / precision
+}
+

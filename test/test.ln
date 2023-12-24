@@ -1,0 +1,35 @@
+
+
+fn main argv {
+
+    adv = 1;
+    args = argv;
+
+    if length(args) - 1 == 0 {
+        print("Please input x <op> y");
+        exit()
+    }
+
+    op = args.at(1 + adv)
+
+    first = math.int(args.at(0 + adv))
+    second = math.int(args.at(2 + adv))
+
+    print(op, op == "-")
+
+    if op == "+" {
+        print(first + second)
+        exit()
+    }
+
+    else if op == "-" {
+        print(first - second)
+        exit()
+    }
+
+    else {
+        print("Unsupported operator: {op}")
+        exit()
+    }
+}
+

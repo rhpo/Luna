@@ -1,0 +1,15 @@
+
+print('Age Calculator (written in Luna)')
+
+age = input('Enter your age: ')
+
+messages = ["Doing some calculations...", "Doing math...", "Please wait, running AI model..."];
+
+i = 0 while i < length(messages) {
+    print(messages.at(i));
+    sleep(1000);
+    i++
+}
+
+print('Your age is:', math.int(age));
+exit();

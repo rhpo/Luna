@@ -117,7 +117,7 @@ export const KEYWORDS: Record<string, TokenType> = {
   tap: TokenType.TAP,
   embed: TokenType.EMBED,
   in: TokenType.IN,
-  undefined: TokenType.Undefined,
+  undef: TokenType.Undefined,
   typeget: TokenType.typeget,
 };
 

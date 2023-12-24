@@ -1,0 +1,24 @@
+
+fn c x {
+	print(x);
+	sleep(1000);
+}
+
+fn main args {
+	count: const = math.int(args.at(0));
+
+	if !count {
+		print("Warning: Please enter the count!");
+	}
+
+	else {
+		i = 0;
+		
+		print("Welcome to counter 1.0");
+
+		while i < count {
+			c(i)
+			i++
+		}
+	}
+}

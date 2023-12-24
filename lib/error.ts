@@ -1,5 +1,7 @@
 import SystemDetails from "./sys";
 
+let emoji = "⚠️";
+
 export function Err(
   type: string,
   desc: string = "Unknown Error!",
@@ -10,9 +12,9 @@ export function Err(
     original;
 
   if (SystemDetails.script) {
-    original = `🪲  ${type}: ${desc}.`;
+    original = `${emoji} ${type}: ${desc}`;
   } else {
-    original = `🪲  ${type.red.underline.bold.toString()}: ${desc.gray}.`;
+    original = `${emoji} ${type.red.underline.bold.toString()}: ${desc.gray}`;
   }
 
   original = "\n" + original;

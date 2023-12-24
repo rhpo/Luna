@@ -9,6 +9,7 @@ interface CreateContextArg {
   value: RuntimeValue;
   constant?: boolean;
   override?: boolean;
+  equivalent?: string;
 }
 
 export class Luna {
@@ -33,6 +34,7 @@ export class Luna {
 
     if (optionalContext) {
       let newEnv = Object.assign({}, this.context);
+      Object.setPrototypeOf(newEnv, this.context?.__proto__); // fixed the "declareVar is undefined" issue
 
       newEnv.variables = new Map([
         ...newEnv.variables,
@@ -62,7 +64,8 @@ export function createContext(contextContent: CreateContextArg[]) {
       object.value,
       !!object.constant,
       false,
-      !!object.override
+      !!object.override,
+      object.equivalent
     );
   });
 

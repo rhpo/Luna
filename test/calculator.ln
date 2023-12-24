@@ -1,0 +1,21 @@
+
+fn sum args {
+	res = 0
+
+	each(args, lambda x { res = res + math.parse(x) });
+
+	res
+}
+
+
+fn main args {
+
+	intsonly = filter(args, lambda x {
+		return math.int(x)
+	});
+
+	print(sum(intsonly));
+
+	exit()
+
+}

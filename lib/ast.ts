@@ -37,6 +37,7 @@ export type NodeType =
   | "ForeachStatement"
   | "EmptyStatement"
   | "ObjectLiteral"
+  | "ArrayLiteral"
   | "FunctionDeclaration";
 
 export interface Statement {
@@ -98,6 +99,11 @@ export interface FunctionDeclaration extends Expression {
 export interface DebugStatement extends Expression {
   kind: "DebugStatement";
   props: Expression[];
+}
+
+export interface ArrayLiteral extends Expression {
+  kind: "ArrayLiteral";
+  elements: Expression[];
 }
 
 export interface Expression extends Statement {

@@ -1,11 +1,9 @@
-#!/usr/bin/luna
 
-# Module: Math
-# Date: Tue Aug 22 2023 10:03:48
 
-# Make a function to calculate the absolute value of n
 out fn abs n {
-    n < 0 ? -n or n
+  if n > 0 {n} else {-n}
 }
 
-pi: out = math.pi
+out fn approx a b epsilon=(0.0001) {
+  return abs(a - b) < epsilon
+}

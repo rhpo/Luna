@@ -1,5 +1,5 @@
 import colors from "colors";
-import { FNVal, NativeFNVal, RuntimeValue } from "../runtime/values";
+import { ArrayValue, FNVal, NativeFNVal, RuntimeValue } from "../runtime/values";
 
 let entrance = 0;
 export function colorize(
@@ -11,8 +11,29 @@ export function colorize(
     case "string":
       return noString ? result.value : colors.green('"' + result.value + '"');
 
-    case "undefined":
-      return "undefined".gray;
+    case "array":
+      let array = result as ArrayValue;
+
+      let max = array.value.length > 16;
+
+      if (!max) {
+        return "[".cyan + array.value.map(function(e): any {return colorize(e, true)}).join(', ') + "]".cyan;
+      }
+
+      else {
+
+        let arrayFrom0to16 = array.value.slice(0, 16);
+
+        return `(${array.value.length} elements) `.cyan + "[".yellow + arrayFrom0to16.map(e => function() {return colorize(e, true)}).join(', ') + ", ...".gray + "]".yellow;
+      }
+
+    case "number":
+      if (!Number.isFinite(result.value))
+        return Number.isNaN(result.value) ? "NaN".cyan :  colors.cyan(result.value.toString().toLowerCase());
+      else return colors.yellow(result.value);
+
+    case "undef":
+      return "undef".gray;
 
     case "NaN":
       return "NaN".cyan;
@@ -43,16 +64,15 @@ export function colorize(
         }}`.gray
       );
     }
-
-    case "number": // Added case for numbers
-      return colors.yellow(result.value);
-
+    
     case "native-fn": {
       let fn = result as NativeFNVal;
 
       const { name } = fn;
 
       return (
+
+        ! isInner ?
         `${colors.magenta("fn")} ${name.cyan} {\n` +
         "  " +
         `${
@@ -61,7 +81,7 @@ export function colorize(
           "\n" +
           "  ".repeat(entrance) +
           "}"
-        }`
+        }` : `${colors.magenta("fn")} ${name.cyan}`	
       );
     }
 

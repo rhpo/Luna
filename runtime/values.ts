@@ -1,10 +1,12 @@
 import { AssignmentExpr, ReactRequirements, Statement } from "../lib/ast";
 import Environment from "../lib/env";
 import { Err } from "../lib/error";
+import { evaluateFunctionCall, stringify } from "./evaluation/eval";
+import unescapeJs from "unescape-js";
 
 export type ValueType =
   | "null"
-  | "undefined"
+  | "undef"
   | "number"
   | "boolean"
   | "string"
@@ -12,6 +14,7 @@ export type ValueType =
   | "return"
   | "native-fn"
   | "fn"
+  | "array"
   | "NaN"
   | "object";
 
@@ -31,7 +34,7 @@ export interface RuntimeValue {
 
   returned?: boolean;
 
-  prototype?: {
+  prototypes?: {
     [key: string]: RuntimeValue;
   };
 
@@ -43,13 +46,19 @@ export interface NullValue extends RuntimeValue {
   value: null;
 }
 
+export interface ArrayValue extends RuntimeValue {
+  type: "array";
+  value: RuntimeValue[];
+  prototypes?: any;
+}
+
 export interface NaNValue extends RuntimeValue {
   type: "NaN";
   value: number;
 }
 
 export interface UndefinedValue extends RuntimeValue {
-  type: "undefined";
+  type: "undef";
   value: undefined;
 }
 
@@ -66,14 +75,14 @@ export interface BooleanValue extends RuntimeValue {
 export interface StringValue extends RuntimeValue {
   type: "string";
   value: string;
-  prototype?: any;
+  prototypes?: any;
 }
 
 export interface FunctionValue extends RuntimeValue {
   type: "function";
   value: object;
 
-  prototype: {
+  prototypes: {
     // *** FUNCTION PROTOTYPE ***
     str: FNVal;
   };
@@ -138,8 +147,8 @@ export const MK = {
   string(s: string = ""): StringValue {
     return {
       type: "string",
-      value: s,
-      prototype: prototypes.string
+      value: unescapeJs(s),
+      prototypes: prototypelist.string
         .map((k) => {
           if (typeof k.value === "function") {
             k.value = MK.nativeFunc(k.value, k.name);
@@ -161,8 +170,44 @@ export const MK = {
   object(o: object): ObjectValue {
     return {
       type: "object",
+      value: true,
       properties: new Map(Object.entries(o)),
+      prototypes: prototypelist.object
+        .map((k) => {
+          if (typeof k.value === "function") {
+            k.value = MK.nativeFunc(k.value, k.name);
+            k.value.rendered = true;
+          } else if (!k.value.rendered) k.value = MK.auto(k.value);
+          return k;
+        })
+        .reduce((result: any, item) => {
+          result[item.name] = item.value;
+          return result;
+        }, {}),
     } as ObjectValue;
+  },
+
+  array(elements: RuntimeValue[]): ArrayValue {
+    let arr = {
+      type: "array",
+      value: elements,
+      prototypes: prototypelist.array
+        .map((k) => {
+          if (typeof k.value === "function") {
+            k.value = MK.nativeFunc(k.value, k.name);
+            k.value.rendered = true;
+          } else if (!k.value.rendered) k.value = MK.auto(k.value);
+          return k;
+        })
+        .reduce((result: any, item) => {
+          result[item.name] = item.value;
+          return result;
+        }, {}),
+    } as ArrayValue;
+
+    Object.setPrototypeOf(arr, null);
+
+    return arr;
   },
 
   nil(): NullValue {
@@ -170,7 +215,7 @@ export const MK = {
   },
 
   undefined(): UndefinedValue {
-    return { type: "undefined", value: undefined } as UndefinedValue;
+    return { type: "undef", value: undefined } as UndefinedValue;
   },
 
   NaN(): NaNValue {
@@ -178,7 +223,7 @@ export const MK = {
   },
 
   nativeFunc(call: FunctionCall, name: string) {
-    return { type: "native-fn", call, name } as NativeFNVal;
+    return { type: "native-fn", value: true, call, name } as NativeFNVal;
   },
 
   func(
@@ -195,7 +240,7 @@ export const MK = {
       parameters,
       export: exported,
       declarationEnv: env,
-      prototype: prototypes.func
+      prototypes: prototypelist.func
         .map((k) => {
           if (typeof k.value === "function") {
             k.value = MK.nativeFunc(k.value, k.name);
@@ -210,7 +255,7 @@ export const MK = {
   },
 };
 
-const prototypes: Record<string, PrototypeItem[]> = {
+const prototypelist: Record<string, PrototypeItem[]> = {
   number: [
     {
       name: "toInt",
@@ -220,11 +265,58 @@ const prototypes: Record<string, PrototypeItem[]> = {
     },
   ],
 
+  array: [
+    {
+      name: "length",
+      value(args: RuntimeValue[]) {
+        return MK.number(args[0].value.length);
+      },
+    },
+
+    {
+      name: "at",
+      value(args: RuntimeValue[]) {
+        return args[0].value[args[1].value];
+      },
+    },
+  ],
+
   func: [
     {
       name: "call",
       value(args) {
-        return MK.number(args[0].value);
+        let fn = args.splice(0, 1)[0];
+
+        return evaluateFunctionCall(
+          fn as any as FNVal,
+          args as RuntimeValue[],
+          new Environment()
+        );
+      },
+    },
+
+    {
+      name: "source",
+      value(args) {
+        return MK.string(
+          (args[0] as any as FNVal).body.map((t) => stringify(t)).join("\n")
+        );
+      },
+    },
+  ],
+
+  object: [
+    {
+      name: "keys",
+      value(args) {
+        let this_ = args[0] as any as ObjectValue;
+
+        return MK.object(
+          Object.assign(
+            {},
+            [...this_.properties.keys()].map((k) => MK.auto(k))
+          )
+        );
       },
     },
   ],
@@ -263,7 +355,10 @@ export const PROTO = {
   auto(n: string) {
     switch (n) {
       case "number":
-        return prototypes.number;
+        return prototypelist.number;
+      case "object":
+        return prototypelist.object;
+
       default:
         return null;
     }

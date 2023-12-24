@@ -1,0 +1,9 @@
+
+
+# Luna FileSystem
+
+$ = mother.import;
+
+fs = $("pkg:fs")
+
+out fn read path {fs.readFileSync(path, "utf8")}

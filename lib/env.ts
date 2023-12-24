@@ -20,7 +20,7 @@ export default class Environment {
     } = {}
   ) {
     // if it doesn't have a parent element, it means it's the global scope
-    this.global = !!parentENV;
+    this.global = !parentENV;
     this.parent = parentENV;
     this.variables = new Map();
     this.constants = new Set();
@@ -76,7 +76,8 @@ export default class Environment {
     value: RuntimeValue,
     constant: boolean = false,
     reactive: boolean = true,
-    override: boolean = false
+    override: boolean = false,
+    equivalent?: string
   ): RuntimeValue {
     if ((name as MemberExprX).kind === "MemberExprX") {
       name = name as MemberExprX;
@@ -94,14 +95,14 @@ export default class Environment {
         name.properties.forEach((prop, idx) => {
           // make a code that changes 'lastone' into the property 'prop', until reaching the last one...
 
-          if (lastone && lastone.type !== "undefined") {
+          if (lastone && lastone.type !== "undef") {
             if (lastone.properties && lastone.properties.has(prop.value)) {
               lastone = lastone.properties.get(prop.value) || MK.undefined();
             } else if (
-              lastone.prototype &&
-              lastone.prototype[prop.value] !== undefined
+              lastone.prototypes &&
+              lastone.prototypes[prop.value] !== undefined
             ) {
-              lastone = lastone.prototype[prop.value];
+              lastone = lastone.prototypes[prop.value];
             } else {
               if (idx !== (name as MemberExprX).properties.length - 1) {
                 lastone = MK.undefined();
@@ -266,7 +267,7 @@ export default class Environment {
       let evaluated = evaluate(name, this);
 
       let NAME = name as RuntimeValue;
-      // NAME.prototype = PROTO.auto(NAME.type as string)?.map(k => k.value);
+      // NAME.prototypes = PROTO.auto(NAME.type as string)?.map(k => k.value);
     }
 
     const env = this.resolve(name);

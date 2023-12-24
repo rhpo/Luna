@@ -1,4 +1,2 @@
 
-use(abs as absFunction) from './math.lnx'
 
-print(absFunction(-1))

@@ -1,4 +1,4 @@
-## NOTE: This README.md file is under construction, please be patient and refer to the code below.
+###### NOTE: This README.md file temporarily placeholdes the repo, please be patient for the author to document Luna and refer to the code below at the meanwhile.
 
 
 [![Contributors][contributors-shield]][contributors-url]
@@ -13,7 +13,7 @@
 
 <div align="center">
 <br>
-   <img src="/luna.png" width="140">
+   <img src="/assets/logo.png" width="140">
 
    <h3 align="center">Luna</h3>
 
@@ -117,7 +117,7 @@ npm install -g lunascript   #  COMING SOON...
  ```js
 import { luna } from 'lunascript';
 
-let output = luna.run(luna_code);
+let output = luna.run(lunascript);
 
 console.log(output); // object {RuntimeValue}
 ```
@@ -129,7 +129,7 @@ console.log(output); // object {RuntimeValue}
 
 fn read book {
 
-  print("Reading {book}..."")
+  print("Reading {book}...")
 }
 
 read("Luna Docs") # Reading Luna Docs...
@@ -241,7 +241,7 @@ print(doubled)   // Output: `4`
 $$e^x=\sum_{n=0}^{\infty}\frac{x^n}{n!}$$
 ```rust
 
-# Taylor Series...
+# The Maclaurin series of the exponential function e^x:
 
 fn expo x {
   precision = 100
@@ -252,7 +252,7 @@ fn expo x {
 
     result += x**n / factorial(n)
 
-    n++
+    n += 1
   }
 
   result
@@ -268,11 +268,11 @@ $$\psi(x) = \frac{e^{2x}}{4x} + x^2 + 4x + 3!$$
 
 x = 1
 
-psi_x: react<x> = exp(2*x) / 4*x + x**2 + 4*x + factorial(3)
+psi_x: react<x> = (E ** 2 * x) / 4*x + x**2 + 4*x + factorial(3)
 
 x = 2
 
-print(doubled)   // Output: `4`
+print(psi_x)   // Output: `25.38905609893...`
 
 ```
 

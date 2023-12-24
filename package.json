@@ -1,0 +1,54 @@
+{
+  "dependencies": {
+    "@types/prompt-sync": "^4.2.0",
+    "js-beautify": "^1.14.11",
+    "pkg": "^5.8.1",
+    "rcedit": "^3.1.0",
+    "robotjs": "^0.6.0",
+    "terminal-kit": "^3.0.0",
+    "unescape-js": "^1.1.4",
+    "upx": "^1.0.6"
+  },
+  "scripts": {
+    "cli": "node dist/cli.js -y",
+    "file": "node dist/cli.js -n"
+  },
+  "bin": {
+    "luna": "dist/cli.js"
+  },
+  "name": "lunalang",
+  "description": "[![Contributors][contributors-shield]][contributors-url]\r [![Forks][forks-shield]][forks-url]\r [![Stargazers][stars-shield]][stars-url]\r [![Issues][issues-shield]][issues-url]\r [![MIT License][license-shield]][license-url]\r [![Linkedin][linkedin-shield]][linkedin-url]\r [![Discord][discord-shield]][discord-url]",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rhpo/luna.git"
+  },
+  "keywords": [
+    "luna",
+    "lunascript",
+    "script",
+    "programming",
+    "language",
+    "custom",
+    "scripting",
+    "rhpo",
+    "ramy",
+    "hadid",
+    "web"
+  ],
+  "author": "Ramy Hadid (@rhpo on GitHub)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rhpo/luna/issues"
+  },
+  "homepage": "https://github.com/rhpo/luna#readme",
+  "devDependencies": {
+    "@types/js-beautify": "^1.14.3",
+    "@types/unescape-js": "^1.0.2"
+  }
+}

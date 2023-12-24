@@ -1,0 +1,56 @@
+
+# Luna Module: Control.lnx
+# WRITTEN BY: The author of Luna
+
+api = mother.import("pkg:robotjs");
+
+# API: Move
+out fn move x y {
+    api.moveMouse(x, y)
+}
+
+# API: Click
+out fn click x y {
+    api.mouseClick(x, y)
+}
+
+# API: Scroll
+out fn scroll x y {
+    api.scrollMouse(x, y)
+}
+
+# API: Drag
+out fn drag x y {
+    api.mouseDrag(x, y)
+}
+
+# API: Get Position
+out fn pos {
+    obj = api.getMousePos()
+
+    {
+        x: obj.x,
+        y: obj.y
+    }
+}
+
+# API: Get Color
+out fn color x y {
+    api.getPixelColor(x, y)
+}
+
+# API: Type String
+out fn type str {
+    api.typeString(str)
+}
+
+# API: Size
+out fn size {
+    obj = api.getScreenSize()
+
+    {
+        width: obj.width,
+        height: obj.height
+    }
+}
+

@@ -1,8 +1,10 @@
 import colors from "colors";
 import PATH from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 import {
   ActionAssignmentExpr,
+  ArrayLiteral,
   AssignmentExpr,
   BinaryExpr,
   CallExpr,
@@ -35,6 +37,7 @@ import { Err } from "../../lib/error";
 import { Luna, createContext } from "../../luna";
 import { evaluate } from "../interpreter";
 import {
+  ArrayValue,
   FNVal,
   MK,
   NativeFNVal,
@@ -45,6 +48,7 @@ import {
 import { colorize } from "../../lib/ui";
 
 import systemDefaults from "./../../lib/sys";
+import sys from "./../../lib/sys";
 
 let originalPath = "./";
 
@@ -315,6 +319,12 @@ export function evaluateIdentifier(
   return env.lookupVar(arg0.value);
 }
 
+export function evaluateArray(array: ArrayLiteral, env: Environment) {
+  let arr = MK.array(array.elements.map((v) => evaluate(v, env)));
+
+  return arr;
+}
+
 export function evaluateString(
   arg0: StringLiteral,
   env: Environment
@@ -369,43 +379,86 @@ export function evaluateUseStatement(
   let imports = statement.imports;
   let path = statement.path.value;
 
-  if (!path.endsWith(".ln") && !path.endsWith(".lnx")) {
-    path += fs.existsSync(path + ".ln")
-      ? ".ln"
-      : fs.existsSync(path + ".lnx")
-      ? ".lnx"
-      : ".ln";
-  }
-
-  let pathDetails = PATH.parse(path);
-
-  let fileName = pathDetails.base;
-  let fileDir = pathDetails.dir;
-  if (!fileDir) fileDir = "./";
-
+  let code = "";
   let tempPath = originalPath;
-  originalPath = PATH.join(originalPath, fileDir);
 
-  let finalPath = PATH.join(originalPath, fileName);
+  if (!path.startsWith(sys.name.toLowerCase() + ":")) {
+    if (!path.endsWith(".ln") && !path.endsWith(".lnx")) {
+      path += fs.existsSync(path + ".ln")
+        ? ".ln"
+        : fs.existsSync(path + ".lnx")
+        ? ".lnx"
+        : ".ln";
+    }
 
-  function isFile(path: string): boolean {
-    try {
-      const stats = fs.statSync(path);
-      return stats.isFile();
-    } catch (error) {
-      // Handle errors, such as if the path does not exist
-      return false;
+    let pathDetails = PATH.parse(path);
+
+    let fileName = pathDetails.base;
+    let fileDir = pathDetails.dir;
+    if (!fileDir) fileDir = "./";
+
+    tempPath = originalPath;
+    originalPath = PATH.join(originalPath, fileDir);
+
+    let finalPath = PATH.join(originalPath, fileName);
+
+    function isFile(path: string): boolean {
+      try {
+        const stats = fs.statSync(path);
+        return stats.isFile();
+      } catch (error) {
+        // Handle errors, such as if the path does not exist
+        return false;
+      }
+    }
+
+    if (!fs.existsSync(finalPath) || !isFile(finalPath)) {
+      throw Err(
+        "FSError",
+        `Cannot find file ${fileName.underline} inside '${finalPath}'`
+      );
+    }
+
+    code = fs.readFileSync(finalPath, "utf-8").toString();
+  } else {
+    let module = path.replace(sys.name.toLowerCase() + ":", "") + ".lnx";
+
+    if (!sys.script) {
+      let homedir = os.homedir();
+
+      let finalPath = PATH.join(
+        homedir,
+        "Documents",
+        `${sys.name.toLowerCase()}-core`,
+        `v${sys.version}`,
+        "modules",
+        module
+      );
+
+      if (process.platform === "linux" || process.platform === "darwin") {
+        finalPath = PATH.join(
+          homedir,
+          `${sys.name.toLowerCase()}-core`,
+          `v${sys.version}`,
+          "modules",
+          module
+        );
+      }
+
+      if (fs.existsSync(finalPath)) {
+        code = fs.readFileSync(finalPath, "utf-8").toString();
+      } else {
+        throw Err(
+          "FSError",
+          `Cannot find module '${module}', please install the latest modules for version='${
+            sys.version
+          }', or use the '${sys.name.toLowerCase()} install <module>' command to install the latest modules.`
+        );
+      }
+    } else {
+      throw Err("UnsupportedError", `Cannot use modules in script mode`);
     }
   }
-
-  if (!fs.existsSync(finalPath) || !isFile(finalPath)) {
-    throw Err(
-      "FSError",
-      `Cannot find file ${fileName.underline} inside '${finalPath}'`
-    );
-  }
-
-  let code = fs.readFileSync(finalPath, "utf-8").toString();
 
   let childEnv = createContext([]);
 
@@ -416,6 +469,13 @@ export function evaluateUseStatement(
 
     let variables = new Map(
       [...childEnv.variables.entries()].filter(([_key, value]) => {
+        if (
+          value.type === "fn" ||
+          value.type === "native-fn" ||
+          value.type === "function"
+        ) {
+          (value as FNVal).declarationEnv = childEnv;
+        }
         return value.export;
       })
     );
@@ -429,11 +489,22 @@ export function evaluateUseStatement(
         if (!variable) {
           throw Err(
             "ModuleError",
-            `'${fileName}' does not provide an export named: ${name}`
+            `'${
+              name.value
+            }' is not exported by the module '${statement.path.value.replace(
+              sys.name.toLowerCase() + ":",
+              ""
+            )}'`
           );
         }
 
+        if (variable.type === "fn" || variable.type === "native-fn") {
+          (variable as FNVal).declarationEnv = childEnv;
+          env.parent = childEnv;
+        }
+
         env.declareVar(alternative.value, variable, false, false, true);
+        childEnv.declareVar(alternative.value, variable, false, false, true);
       });
     } else {
       let module = MK.object(Object.fromEntries(variables));
@@ -467,10 +538,7 @@ export function evaluateObjectExpression(
   env: Environment
 ): RuntimeValue {
   p++;
-  const result = {
-    type: "object",
-    properties: new Map<string, RuntimeValue>(),
-  } as ObjectValue;
+  const result = MK.object({}) as ObjectValue;
 
   for (const { key, value, id, reactiveCBExpr } of object.properties) {
     let runtimeVal = evaluate(value, env);
@@ -525,7 +593,7 @@ export function evaluateObjectExpression(
   return result;
 }
 
-function stringify(expr: Expression): string {
+export function stringify(expr: Expression): string {
   switch (expr.kind) {
     case "BinaryExpr":
       let binExpr = expr as BinaryExpr;
@@ -706,7 +774,7 @@ export function evaluateFunctionCall(
 
   let f = fn as FNVal;
 
-  const fnScope = f.declarationEnv || new Environment(env);
+  const fnScope = env || f.declarationEnv;
 
   for (var i = 0; i < f.parameters.length; i++) {
     const variable = f.parameters[i];
@@ -720,7 +788,7 @@ export function evaluateFunctionCall(
 
   let result: RuntimeValue = MK.nil();
 
-  X: for (const state of f.body) {
+  for (const state of f.body) {
     result = evaluate(state, fnScope);
 
     if (result.type === "return") {
@@ -735,7 +803,8 @@ export function evaluateIfStatement(
   expression: IFStatement,
   env: Environment
 ): RuntimeValue {
-  const condition = evaluate(expression.test, env).value;
+  let c = evaluate(expression.test, env);
+  const condition = c.value;
 
   let ifEnv = new Environment(env, {
     in: "if",
@@ -943,29 +1012,104 @@ export function evaluateMemberExprX(
   //   ]
   // }
 
+  // {
+  //   "kind": "MemberExprX",
+  //   "parent": {
+  //     "kind": "CallExpr",
+  //     "caller": {
+  //       "kind": "MemberExprX",
+  //       "parent": {
+  //         "kind": "Identifier",
+  //         "value": "a"
+  //       },
+  //       "properties": [
+  //         {
+  //           "kind": "Identifier",
+  //           "value": "b"
+  //         },
+  //         {
+  //           "kind": "Identifier",
+  //           "value": "c"
+  //         }
+  //       ]
+  //     },
+  //     "args": []
+  //   },
+  //   "properties": [
+  //     {
+  //       "kind": "Identifier",
+  //       "value": "d"
+  //     }
+  //   ]
+  // }
+
   let mainObj = env.lookupVar(
     expression.parent.kind !== "Identifier"
       ? expression.parent
       : expression.parent.value
-  ) as ObjectValue;
+  ) as ObjectValue | ArrayValue;
 
-  if (mainObj.type !== "object") {
+  // if (mainObj.type === "array") {
+  //   let lastProp: ObjectValue | RuntimeValue | undefined = mainObj;
+
+  //     for (var i = 0; i < properties.length; i++) {
+  //       let prop = properties[i];
+
+  //       if (!lastProp || lastProp.type === "undef") {
+  //         throw Err(
+  //           "NameError",
+  //           `Cannot read properties of an undefined value, READING: ${
+  //             [expression.parent]
+  //               .concat(properties)
+  //               .slice(0, i + 2)
+  //               .map((i) => i.value)
+  //               .join(" → ".green).white
+  //           }`
+  //         );
+  //       }
+
+  //       if (lastProp.value && Array.isA) {
+  //         lastProp = lastProp.properties.get(prop.value) as ObjectValue;
+  //       } else if (lastProp.prototypes && lastProp.prototypes[prop.value]) {
+  //         lastProp = lastProp.prototypes[prop.value];
+  //       } else lastProp = MK.undefined();
+  //     }
+
+  //     return lastProp || MK.undefined();
+  // }
+
+  if (mainObj.type !== "object" && mainObj.type !== "array") {
     let proty = mainObj as RuntimeValue;
     let properties = [...expression.properties];
 
-    if (proty.prototype) {
-      if (proty.prototype[properties[0].value])
-        proty.prototype[properties[0].value].owner = mainObj;
+    if (proty.prototypes) {
+      if (proty.prototypes[properties[0].value]) {
+        proty.prototypes[properties[0].value].owner = mainObj;
+      }
 
       let lastProp: ObjectValue | RuntimeValue | undefined =
-        proty.prototype[properties[0].value];
+        proty.prototypes[properties[0].value];
+
+      if (!lastProp) {
+        throw Err(
+          "NameError",
+          `"undef" value cannot have properties, READING: ${
+            [expression.parent]
+              .concat(properties)
+              .map((i) => i.value)
+              .join(" → ".green).white
+          }`
+        );
+      }
+
+      Object.setPrototypeOf(lastProp.value, null);
 
       properties.shift();
 
       for (var i = 0; i < properties.length; i++) {
         let prop = properties[i];
 
-        if (!lastProp || lastProp.type === "undefined") {
+        if (!lastProp || lastProp.type === "undef") {
           throw Err(
             "NameError",
             `Cannot read properties of an undefined value, READING: ${
@@ -980,8 +1124,8 @@ export function evaluateMemberExprX(
 
         if (lastProp.properties && lastProp.properties.has(prop.value)) {
           lastProp = lastProp.properties.get(prop.value) as ObjectValue;
-        } else if (lastProp.prototype && lastProp.prototype[prop.value]) {
-          lastProp = lastProp.prototype[prop.value];
+        } else if (lastProp.prototypes && lastProp.prototypes[prop.value]) {
+          lastProp = lastProp.prototypes[prop.value];
         } else lastProp = MK.undefined();
       }
 
@@ -990,12 +1134,14 @@ export function evaluateMemberExprX(
 
     return MK.undefined();
   } else {
-    let lastProp: ObjectValue | RuntimeValue | undefined = mainObj;
+    let lastProp: ArrayValue | ObjectValue | RuntimeValue | undefined = mainObj;
+
+    Object.setPrototypeOf(lastProp.value, null);
 
     for (var i = 0; i < expression.properties.length; i++) {
       let prop = expression.properties[i];
 
-      if (!lastProp || lastProp.type === "undefined") {
+      if (!lastProp || lastProp.type === "undef") {
         throw Err(
           "NameError",
           `Cannot read properties of an undefined value, READING: ${
@@ -1008,11 +1154,30 @@ export function evaluateMemberExprX(
         );
       }
 
-      if (lastProp.properties && lastProp.properties.has(prop.value)) {
-        lastProp = lastProp.properties.get(prop.value) as ObjectValue;
-      } else if (lastProp.prototype && lastProp.prototype[prop.value]) {
-        lastProp = lastProp.prototype[prop.value];
-      } else lastProp = MK.undefined();
+      if (!lastProp.prototypes) lastProp.prototypes = {};
+
+      (lastProp.prototypes[expression.properties[i].value] || {}).owner =
+        mainObj;
+
+      // add support for arrays and objects at the same time
+      switch (lastProp.type) {
+        case "array":
+          if (lastProp.prototypes && lastProp.prototypes[prop.value]) {
+            lastProp = lastProp.prototypes[prop.value];
+          } else if (lastProp.value?.length > 0 && lastProp.value[prop.value]) {
+            lastProp = lastProp.value[prop.value] as ArrayValue;
+          } else lastProp = MK.undefined();
+          break;
+
+        default:
+          if (lastProp.properties && lastProp.properties.has(prop.value)) {
+            lastProp = lastProp.properties.get(prop.value) as ObjectValue;
+          } else if (lastProp.prototypes && lastProp.prototypes[prop.value]) {
+            lastProp = lastProp.prototypes[prop.value];
+          } else lastProp = MK.undefined();
+
+          break;
+      }
     }
 
     return lastProp || MK.undefined();

@@ -33,6 +33,7 @@ import {
   TapStatement,
   EmbedStatement,
   Import,
+  ArrayLiteral,
 } from "./ast";
 import { Err } from "./error";
 
@@ -243,6 +244,9 @@ export default class Parser {
       case TokenType.FN:
       case TokenType.LAMBDA:
         return this.parseFunctionDeclaration();
+
+      case TokenType.OpenBracket:
+        return this.parseArrayDeclaration();
 
       case TokenType.BinaryOperator:
         return this.parseUnaryExpression();
@@ -502,10 +506,16 @@ export default class Parser {
       this.at().type === TokenType.Dot ||
       this.at().type === TokenType.OpenBracket
     ) {
-      throw Err(
-        "LunaError",
-        "Cannot implement CallExpressions inside MemberExpressions (Unsupported)"
-      );
+
+      let m = callExpression
+
+      let k = this.parseMemberExpression(m);
+
+      return k;
+      // throw Err(
+      //   "LunaError",
+      //   "Cannot implement CallExpressions inside MemberExpressions (Unsupported)"
+      // );
     }
 
     this.eatOptional();
@@ -538,9 +548,9 @@ export default class Parser {
     return args as Expression[];
   }
 
-  private parseMemberExpression(): Expression {
+  private parseMemberExpression(originalParent?: Expression): Expression {
     // it also parses identifiers
-    let object = this.parsePrimaryExpression();
+    let object = originalParent || this.parsePrimaryExpression();
 
     let backup = Object.assign({}, object);
 
@@ -563,8 +573,7 @@ export default class Parser {
         if (!["MemberExpr", "Identifier"].includes(c.kind)) {
           throw Err(
             "SyntaxError",
-            `Unexpected token '${
-              c.kind
+            `Unexpected token '${c.kind
             }', expecting 'Identifier'${this.where()}`
           );
         }
@@ -845,6 +854,42 @@ export default class Parser {
     return object;
   }
 
+  private parseArrayDeclaration(): ArrayLiteral {
+
+    this.expect(TokenType.OpenBracket);
+    this.eat();
+
+    let result = {
+      kind: "ArrayLiteral",
+      elements: [],
+    } as ArrayLiteral;
+
+    if (this.at().type === TokenType.CloseBracket) {
+      this.eat();
+      return result;
+    }
+
+    X: while (this.notEOF() && this.at().type !== TokenType.CloseBracket) {
+      let expr = this.parseExpression();
+
+      result.elements.push(expr);
+
+      if (this.at().type === TokenType.Comma) {
+        this.eat();
+      } else if (this.at().type === TokenType.CloseBracket) {
+        this.eat();
+        break X;
+      } else {
+        throw Err(
+          "SyntaxError",
+          `Unexpected token ${strv(this.at().type as TokenType)}, expecting ',' or ']'`
+        )
+      }
+    }
+
+    return result;
+  }
+
   private parseFunctionDeclaration(
     isExport: boolean = false
   ): FunctionDeclaration {
@@ -1060,8 +1105,8 @@ export default class Parser {
       value += fs.existsSync(value + ".ln")
         ? ".ln"
         : fs.existsSync(value + ".lnx")
-        ? ".lnx"
-        : ".ln";
+          ? ".lnx"
+          : ".ln";
     }
 
     if (value.trim() === "") {
@@ -1094,8 +1139,8 @@ export default class Parser {
       path += fs.existsSync(path + ".ln")
         ? ".ln"
         : fs.existsSync(path + ".lnx")
-        ? ".lnx"
-        : ".ln";
+          ? ".lnx"
+          : ".ln";
     }
 
     function isFile(path: string): boolean {

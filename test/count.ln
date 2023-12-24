@@ -1,0 +1,13 @@
+
+
+start = time()
+
+x = 0
+
+while x < 10000000000 {
+  x++
+}
+
+end = time()
+
+print(end - start)

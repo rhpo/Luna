@@ -1,2 +1,35 @@
 
-print("Hello, World!")
+print("Factorial calculator V1.0");
+
+while 1 {
+    n = input("Enter n = ");
+
+    if n == "exit" {
+        exit()
+    }
+
+    n = math.parse(n);
+
+    start = time()
+    result = factorial(n);
+    end = time()
+
+    print("Factorial {n}! = {result}");
+    print("Time taken:", (end - start) + "ms")
+
+    fn factorial n {
+        if n <= 0 {
+            return 1
+        }
+
+        else {
+            return factorial(n - 1) * n
+        }
+    }
+}
+
+# fn main argv {
+#    each(argv, lambda x {
+#        
+#    })
+#}

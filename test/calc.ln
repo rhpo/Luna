@@ -1,0 +1,34 @@
+use (abs, approx) from 'test/math.lnx'
+
+mod = mother.import('Math');
+
+fn cos x {
+  mod.cos(x)  
+}
+
+fn expo x {
+  return mod.E ** x;
+}
+
+delta = math.float(input('Range N: ')) || 200;
+epsilon = math.float(input('Epsilon e: ')) || 0.001;
+P: const = math.float(input('Psi P: ')) || 0.001
+
+n = -delta
+
+fn eq x {
+  approx(expo(x), expo(cos(x)), P)
+}
+
+while n < delta {
+  n = n + epsilon
+
+  print(math.int(abs(n + delta) / delta / 2 * 100) + "% for n=" + n);
+
+  if eq(n) {
+     print("Found: " + n);
+     exit();
+  }
+}
+
+print("Not found, n={n}"); 

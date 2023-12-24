@@ -1,0 +1,98 @@
+
+# Math Module
+
+fn sign n {
+    if n < 0 {
+        return -1
+    }
+    1
+}
+
+fn abs n {
+    n * sign(n)
+}
+
+fn sqrt n {
+    if n < 0 {
+        return -1
+    }
+
+    if n == 0 {
+        return 0
+    }
+
+    if n == 1 {
+        return 1
+    }
+
+    x = n / 2
+    y = 0
+
+    while x != y {
+        y = x
+        x = (x + n / x) / 2
+    }
+
+    x
+}
+
+fn frac x y {
+    x / y
+}
+
+fn pow n p {
+    if p == 0 {
+        return 1
+    }
+
+    if p == 1 {
+        return n
+    }
+
+    if p < 0 {
+        return frac(1, pow(n, -p))
+    }
+
+    if p % 2 == 0 {
+        return pow(frac(n, frac(1, 2)), 2)
+    }
+}
+
+fn mod x y {
+    x - y * frac(x, y)
+}
+
+fn vector x y {
+    {x, y}
+}
+
+lib: out = {
+    sign,
+    abs,
+    sqrt,
+    pow,
+    frac,
+    mod,
+    vector
+}
+
+# This module provides some basic math functions.
+
+
+fn cos x {
+    sum = 0
+    index = 0
+
+    while index < 10 {
+        sum = sum + pow(-1, index) * pow(x, 2 * index) / fact(2 * index)
+        index = index + 1
+    }
+}
+
+fn fact n {
+    if n == 0 {
+        return 1
+    }
+
+    n * fact(n - 1)
+}

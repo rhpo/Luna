@@ -1,0 +1,212 @@
+
+# This is a module written in Luna
+# It's goal is to provide a simple way to convert a string to colored string
+
+colours = {
+    reset: "\\x1b[0m",
+    bright: "\\x1b[1m",
+    dim: "\\x1b[2m",
+    underscore: "\\x1b[4m",
+    blink: "\\x1b[5m",
+    reverse: "\\x1b[7m",
+    hidden: "\\x1b[8m",
+    italic: "\\x1b[3m",
+    bold: "\\x1b[1m",
+
+    fg: {
+        black: "\\x1b[30m",
+        red: "\\x1b[31m",
+        green: "\\x1b[32m",
+        yellow: "\\x1b[33m",
+        blue: "\\x1b[34m",
+        magenta: "\\x1b[35m",
+        cyan: "\\x1b[36m",
+        white: "\\x1b[37m",
+        gray: "\\x1b[90m",
+        crimson: "\\x1b[38m"
+    },
+    bg: {
+        black: "\\x1b[40m",
+        red: "\\x1b[41m",
+        green: "\\x1b[42m",
+        yellow: "\\x1b[43m",
+        blue: "\\x1b[44m",
+        magenta: "\\x1b[45m",
+        cyan: "\\x1b[46m",
+        white: "\\x1b[47m",
+        gray: "\\x1b[100m",
+        crimson: "\\x1b[48m"
+    }
+}
+
+out fn red str {
+    colours.fg.red + str + colours.reset
+}
+
+out fn green str {
+    colours.fg.green + str + colours.reset
+}
+
+out fn yellow str {
+    colours.fg.yellow + str + colours.reset
+}
+
+out fn blue str {
+    colours.fg.blue + str + colours.reset
+}
+
+out fn magenta str {
+    colours.fg.magenta + str + colours.reset
+}
+
+out fn cyan str {
+    colours.fg.cyan + str + colours.reset
+}
+
+out fn white str {
+    colours.fg.white + str + colours.reset
+}
+
+out fn gray str {
+    colours.fg.gray + str + colours.reset
+}
+
+out fn crimson str {
+    colours.fg.crimson + str + colours.reset
+}
+
+out fn black str {
+    colours.fg.black + str + colours.reset
+}
+
+out fn bright str {
+    colours.bright + str + colours.reset
+}
+
+out fn dim str {
+    colours.dim + str + colours.reset
+}
+
+out fn underscore str {
+    colours.underscore + str + colours.reset
+}
+
+out fn blink str {
+    colours.blink + str + colours.reset
+}
+
+out fn reverse str {
+    colours.reverse + str + colours.reset
+}
+
+out fn hidden str {
+    colours.hidden + str + colours.reset
+}
+
+out fn italic str {
+    colours.italic + str + colours.reset
+}
+
+out fn bold str {
+    colours.bold + str + colours.reset
+}
+
+bg: out = {
+    black: lambda str {
+        colours.bg.black + str + colours.reset
+    },
+    red: lambda str {
+        colours.bg.red + str + colours.reset
+    },
+    green: lambda str {
+        colours.bg.green + str + colours.reset
+    },
+    yellow: lambda str {
+        colours.bg.yellow + str + colours.reset
+    },
+    blue: lambda str {
+        colours.bg.blue + str + colours.reset
+    },
+    magenta: lambda str {
+        colours.bg.magenta + str + colours.reset
+    },
+    cyan: lambda str {
+        colours.bg.cyan + str + colours.reset
+    },
+    white: lambda str {
+        colours.bg.white + str + colours.reset
+    },
+    gray: lambda str {
+        colours.bg.gray + str + colours.reset
+    },
+    crimson: lambda str {
+        colours.bg.crimson + str + colours.reset
+    }
+}
+
+out fn split str seprarator=('') {
+    # split the string into an array of characters
+
+    res = [];
+    i = 0
+
+    if seprarator == '' {
+        # split the string into an array of characters
+
+        while i < length(str) {
+            res = array.add(res, string.at(str, i))
+            i = i + 1
+        }
+
+    } else {
+        # split the string into an array of strings
+
+        i = 0
+        temp = ''
+        while i < length(str) {
+            if string.at(str, i) == seprarator {
+                res = array.add(res, temp)
+                temp = ''
+            } else {
+                temp = temp + string.at(str, i)
+            }
+            i = i + 1
+        }
+
+    }
+
+    res
+
+}
+
+out fn join arr seprarator=('') {
+    # join the array into a string
+
+    res = ''
+    each(arr, lambda item {
+        res = res + item + seprarator
+    })
+
+    res
+
+}
+
+out fn algerian str {
+    # split the string into an array of characters
+
+    cols = [
+        green,
+        red
+    ]
+
+    join(map(split(str), lambda char i {
+
+        if i % 2 == 0 {
+            cols[0](char)
+        } else {
+            cols[1](char)
+        }
+
+    }))
+
+}
