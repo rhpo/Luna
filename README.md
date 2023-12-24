@@ -1,40 +1,57 @@
 ###### NOTE: This README.md file temporarily placeholdes the repo, please be patient for the author to document Luna and refer to the code below at the meanwhile.
 
+# Luna 🌙 &nbsp;&horbar;&nbsp; A High-Level Programming language.
+
+<div align="center">
+<br>
+   <!--img src="/assets/logo-styles/luna-noborders.png#gh-dark-mode-only" width="140">
+   <img src="/assets/logo-styles/luna-noborders.png#gh-light-mode-only" width="140"-->
+
+   <img src="/assets/logo-styles/luna-noborders.png" width="140">
+
+   <h3 align="center">Luna</h3>
+
+  <p align="center">
+    <strong>Luna: </strong> An <strong>elegant</strong>, versatile programming language with efficient scripting capabilities, built in <img src="https://cdn-icons-png.flaticon.com/512/5968/5968381.png" width="16" align="center"/> TypeScript for simplicity and productivity in both general programming and automation tasks 🤖.</p>
+<a href="https://github.com/rhpo/luna/tree/main/docs"><strong>Explore the docs »</strong></a>
+<br>
+ <a href="https://rhpo.github.io/luna/releases/">Get Releases</a>
+    ·
+    <a href="https://rhpo.github.io/luna/examples/">View Examples</a>
+    ·
+    <a href="https://github.com/rhpo/luna/issues">Report Bug</a>
+    ·
+    <a href="mailto:luna@ramey.ml">Request Feature</a>
+<br>
+<br>
+	<p>
+		<a href="https://vercel.com/?utm_source=discordjs&utm_campaign=oss"><img src="https://raw.githubusercontent.com/discordjs/discord.js/main/.github/powered-by-vercel.svg" alt="Vercel" /></a>
+		<a href="https://www.cloudflare.com"><img src="https://raw.githubusercontent.com/discordjs/discord.js/main/.github/powered-by-workers.png" alt="Cloudflare Workers" height="44" /></a>
+	</p>
+
+  <div align="center">
 
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
+
 [![MIT License][license-shield]][license-url]
 [![Linkedin][linkedin-shield]][linkedin-url]
 [![Discord][discord-shield]][discord-url]
 
-# Luna 🌙 &nbsp;&horbar;&nbsp; A High-Level Programming language.
 
-<div align="center">
-<br>
-   <img src="/assets/logo.png" width="140">
-
-   <h3 align="center">Luna</h3>
-
-  <p align="center">
-    <strong>Luna: </strong> An <strong>elegant</strong>, versatile programming language with efficient scripting capabilities, built in TypeScript for simplicity and productivity in both general programming and automation tasks.
-    <br />
-    <a href="https://github.com/rhpo/luna/tree/main/docs"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://rhpo.github.io/luna/demo/mario-game/">View Examples</a>
-    ·
-    <a href="https://github.com/rhpo/luna/issues">Report Bug</a>
-    ·
-    <a href="mailto:luna@ramey.ml">Request Feature</a>
-  </p>
+<p>
+		<!--a href="https://discord.gg/djs"><img src="https://img.shields.io/discord/222078108977594368?color=5865F2&logo=discord&logoColor=white" alt="Discord server" /></a-->
+		<a href="https://www.npmjs.com/package/lunascript"><img src="https://img.shields.io/npm/v/lunascript.svg?maxAge=3600" alt="npm version" /></a>
+		<a href="https://www.npmjs.com/package/lunascript"><img src="https://img.shields.io/npm/dt/lunascript.svg?maxAge=3600" alt="npm downloads" /></a>
+	</p>
 
 </div>
 
-</center>
+</div>
 
-<details>
+<details align="left">
   <summary>Table of Contents</summary>
   <ol>
      <li>
@@ -68,8 +85,14 @@
 <br>
 <h2 name="news">&bull; 📰 News</h2>
 
-+ ✅ Added  support for __asyncronous__ ``lambda`` expressions.
++ ✅ Added support for __asyncronous__ ``lambda`` expressions.
++ ✅ Added "use" statements: ``use(external as custom) from 'file.lnx'``
++ ✅ Improved **speed & performance** ⚡.
++ ✅ Added ``embed`` statements, you can now **embed** code from *other files* inside your main file: ``embed "path/to/file.ln";``
++ ✅ Added TapStatements, to execute files without the need to import (performance optimisation):  ``tap "exec/this/code.ln";``
 <br>
+
+_____
 
 <br>
 <h2 name="about-the-project">&bull; 🔍 About The Project</h2>
@@ -98,25 +121,61 @@ Overall, Luna aims to provide an elegant and productive programming experience, 
 + It supports multiple programming paradigms, including procedural, object-oriented, and functional programming.
 + Luna's focus on elegance and flexibility makes it an excellent choice for building a wide range of applications, from web development to system programming.
 <br>
+
+<h2 name="why-choose">&bull; 🤖 How does Luna 🌙 function?</h2>
+
+Luna's functioning follows a precise sequence: first, the written code undergoes **tokenization**, breaking it into individual tokens. These tokens are then **parsed** to form *statements*, which are organized into an **Abstract Syntax Tree (AST)**. This AST is then preprocessed, embedding any inline code fragments. The interpreter then steps in, evaluating the AST and executing the embedded code, resulting in a final result object known as a **Runtime Value**. This sequential process ensures that the code's logic is accurately understood, processed, and executed, producing the desired outcomes in Luna's unique programming environment.
+
+<div align="center">
+
+### Luna Diagram representing the Architecture Overview
+
+<img src="https://github.com/rhpo/Luna/assets/69460661/6f390f7f-8a43-41c9-9765-6ec50fbf8b47" width="700">
+ 
+</div>
+
+### Red flags 🚩:
+
+**Luna** is 7.28x slower than **Python** (exactly 7.28060546875x)
+
+Relation between the runtime of Luna $(t_{l})$ and the runtime of Python $(t_{p})$ and the Luna-Python Time Scalar $(\Delta_{l,p})$
+
+Like so: $t_{p}(t_{l}) = \Delta _{l,p}t_{l}$
+
+
+Luna has a max of recursive function call of $n = 2428 \pm \Delta R, \ \ \Delta R \in \mathbb{Z}, \ \ \Delta R \approx 1$
+
+
+<br>
+<br>
+
+____
+
+
 <h1 name="getting-started">&bull; 🛠️ Getting Started</h1>
 <strong name="nodejs">
-&nbsp;&nbsp;🌿 NodeJS <i>(for intellisence)</i> :
+&nbsp;&nbsp;🛠️ Install the Luna API 🌙</i> :
 </strong>
 <br><br>
 
- ```bash
-npm install -g lunascript   #  COMING SOON...
+```console
+luna:~$ npm i -g lunascript  # Installation (API & CLI)...
+luna:~$ luna --help          # Show Help Menu...
 ```
 
 <strong name="web">
-&nbsp;&nbsp;🌐 Web
-    <strong>&bull; JavaScript</strong>
-</strong>
+&nbsp;&nbsp;🌐 API <strong>&bull; TypeScript</strong></strong>
 <br><br>
 
- ```js
-import { luna } from 'lunascript';
+ ```ts
+import { Luna, ... } from 'lunascript';
 
+let script = `
+   name = input("What's your name? ");
+   print("Hello, {name}!")
+`;
+
+let luna = new Luna();
 let output = luna.run(lunascript);
 
 console.log(output); // object {RuntimeValue}
@@ -140,11 +199,9 @@ read("Luna Docs") # Reading Luna Docs...
 ```rust
 
 fn sum x=(1) y=(1) {
-
   if x && y {
-    x + y
+    return x + y
   }
-
 }
 
 print(sum(2, 4)) # 6
@@ -235,13 +292,45 @@ print(doubled)   // Output: `4`
 
 ```
 
+#### ✱ Export variables & functions:
+```rust
+
+// Export function:
+out fn sum x y {
+^^^
+   return x + y  
+}         
+
+// Export variable (using the out action):
+x: out = 5
+   ^^^        
+```
+
+#### ✱ Importing variables & functions:
+```rust
+
+// Import a module:
+use "maths.lnx" as math;
+
+// Import specific components:
+use (cos, sin as Sinus, tan, PI as pi) from "math.lnx";   // Modules have extension ".lnx"...
+
+
+// Call a file without importing it:
+tap "file.ln";
+
+// Embedding a file into the current code (code-preprocessor):
+embed "file.ln";
+```
 
 #### ✱ Implementing Math in Luna:
 
-$$e^x=\sum_{n=0}^{\infty}\frac{x^n}{n!}$$
+$$\Huge e^x = \sum_{n=0}^{\infty} \frac{x^n}{n!}$$
 ```rust
 
 # The Maclaurin series of the exponential function e^x:
+
+use (fact as factorial) from "factorial.lnx"
 
 fn expo x {
   precision = 100
@@ -263,16 +352,18 @@ print(expo(0)) # 1
 ```
 
 #### ✱ Implementing Luna's reactivity with Math:
-$$\psi(x) = \frac{e^{2x}}{4x} + x^2 + 4x + 3!$$
+$$\Huge \psi(\theta) = \frac{e^{2\theta}}{log(4\theta)} + \theta^2 + 2\theta!$$
 ```rust
 
-x = 1
+use (E as e, factorial, Log as log) from "math.lnx";
 
-psi_x: react<x> = (E ** 2 * x) / 4*x + x**2 + 4*x + factorial(3)
+theta = 1
 
-x = 2
+psi_theta: react<theta> = (e ** 2 * theta) / log(4 * theta) + theta**2 + factorial(2 * theta)
+print(psi_theta)   // Output: `15.2729565249...`
 
-print(psi_x)   // Output: `25.38905609893...`
+theta = 2
+print(psi_theta)   // Output: `68.4570428413...`
 
 ```
 

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+<<<<<<< HEAD
     "@types/prompt-sync": "^4.2.0",
     "js-beautify": "^1.14.11",
     "pkg": "^5.8.1",
@@ -50,5 +51,8 @@
   "devDependencies": {
     "@types/js-beautify": "^1.14.3",
     "@types/unescape-js": "^1.0.2"
+=======
+    "rcedit": "^3.1.0"
+>>>>>>> e7a5b4fb5113cdd9cc5fa2d6af25221c329ae629
   }
 }
