@@ -8,6 +8,7 @@ import { KEYWORDS } from "./lib/tokenizer";
 import { exec } from "pkg";
 
 import beautify from "js-beautify/js";
+
 import UPXSetup from "upx";
 
 let upx = UPXSetup({
@@ -22,7 +23,7 @@ process.argv = process.argv.filter((c) => {
 import fs from "node:fs";
 import PATH from "node:path";
 import systemDefaults from "./lib/sys";
-import LunaTranspiler from "./transpiler/transpiler";
+import LunaTranspiler from "../transpiler/transpiler";
 import { Err } from "./lib/error";
 
 let code: string;
@@ -38,7 +39,7 @@ const checkBrackets = (expression: string) => {
     // "'": "'"
   };
 
-  let inStr = false;
+  let inStr: boolean | string = false;
 
   for (const key of expression) {
     if (key === '"' && inStr === '"') inStr = false;
@@ -107,23 +108,6 @@ async function ask(prompt: string, complete?: Array<string>): Promise<string> {
   });
 }
 
-function parse(code: string) {
-  try {
-    let luna = new Luna();
-
-    return luna.produceAST(code);
-  } catch (e: any) {
-    console.log(e.stack || e);
-
-    return false;
-  }
-}
-
-const sleep = (i: number) => {
-  var waitTill = new Date(new Date().getTime() + i);
-  while (waitTill > new Date()) {}
-};
-
 function exit() {
   console.log("\nExiting...".gray + "\n");
   process.exit(0);
@@ -172,6 +156,8 @@ async function cli() {
 
       await cli();
     }
+  } else {
+    await cli();
   }
 }
 
@@ -285,6 +271,7 @@ async function main(argums: string[]) {
 
       default:
         let runner = first;
+        runner = PATH.resolve(runner); // to make it absolute
         if (fs.existsSync(runner)) {
           try {
             let code = fs.readFileSync(runner, "utf8").toString();
@@ -293,6 +280,8 @@ async function main(argums: string[]) {
           } catch (e: any) {
             console.log(e.stack || e);
           }
+        } else {
+          console.log("File not found!".red);
         }
         break;
     }

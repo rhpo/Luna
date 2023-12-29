@@ -20,14 +20,14 @@ import {
   TypegetExpr,
   UnaryExpr,
   WhileStatement,
-} from "../lib/ast";
-import Environment from "../lib/env";
+} from "../src/lib/ast";
+import Environment from "../src/lib/env";
 
-import native from "../native/func";
+import native from "../src/native/func";
 
-import { Err } from "../lib/error";
-import { Luna } from "../luna";
-import { stringify } from "../runtime/evaluation/eval";
+import { Err } from "../src/lib/error";
+import { Luna } from "../src/luna";
+import { stringify } from "../src/runtime/evaluation/eval";
 
 declare var prettier: any;
 declare var prettierPlugins: any;
@@ -68,9 +68,11 @@ export default class LunaTranspiler {
 
     if (this.mainFuncCall) {
       let mainIdx = ast.body.findIndex(
-        (s) => s.kind === "FunctionDeclaration" && (s as FunctionDeclaration)?.name === "main"
+        (s: { kind: string }) =>
+          s.kind === "FunctionDeclaration" &&
+          (s as FunctionDeclaration)?.name === "main"
       );
-  
+
       if (mainIdx > -1) {
         let callExpr = {
           kind: "CallExpr",
@@ -87,61 +89,69 @@ export default class LunaTranspiler {
               },
               args: [],
               computed: false,
-            }
+            },
           ],
-  
-          computed: false
+
+          computed: false,
         } as Expression;
-  
+
         ast.body.splice(mainIdx + 1, 0, callExpr);
       }
     }
 
     let sourceJS = this.reallyTranspile(ast);
 
-    native.variables.forEach((v) => {
-      if (!['null', 'true', 'false'].includes(v.name)) {
-
+    native.variables.forEach((v: { name: string; value: any }) => {
+      if (!["null", "true", "false"].includes(v.name)) {
         let value: any = v.value;
 
         if (value?.type === "array") {
-          value = `[${value.value.map((v: any) => stringify(v.value)).join(", ")}]`;
-        }
+          value = `[${value.value
+            .map((v: any) => stringify(v.value))
+            .join(", ")}]`;
+        } else if (value?.type === "object") {
+          value = `{${Object.keys(value.value)
+            .map((k) => `"${k}": ${stringify(value.value[k].value)}`)
+            .join(", ")}}`;
+        } else value = value.value;
 
-        else if (value?.type === "object") {
-          value = `{${Object.keys(value.value).map((k) => `"${k}": ${stringify(value.value[k].value)}`).join(", ")}}`;
-        }
-
-        else value = value.value;
-        
         sourceJS = `var ${v.name} = ${value};\n` + sourceJS;
       }
-    })
+    });
 
-    native.nativelib.forEach((cls) => {
-
-      if (cls.public || cls.exportAs === "@DEFAULT") {
-        cls.collection.forEach((fn) => {
-          if (fn.knownas) {
-            sourceJS = `var ${fn.name} = ${
-              typeof fn.knownas === "string" ? fn.knownas : fn.knownas.backend
-            };\n` + sourceJS;
-          }
-        });
+    native.nativelib.forEach(
+      (cls: { public: any; exportAs: string; collection: any[] }) => {
+        if (cls.public || cls.exportAs === "@DEFAULT") {
+          cls.collection.forEach(
+            (fn: { knownas: { backend: any }; name: any }) => {
+              if (fn.knownas) {
+                sourceJS =
+                  `var ${fn.name} = ${
+                    typeof fn.knownas === "string"
+                      ? fn.knownas
+                      : fn.knownas.backend
+                  };\n` + sourceJS;
+              }
+            }
+          );
+        } else if (cls.collection.some((fn: { knownas: any }) => fn.knownas)) {
+          let objects = "";
+          cls.collection.forEach(
+            (fn: { knownas: { backend: any }; name: any }, i: any) => {
+              if (fn.knownas) {
+                objects += `"${fn.name}": ${
+                  typeof fn.knownas === "string"
+                    ? fn.knownas
+                    : fn.knownas.backend
+                },\n`;
+              }
+            }
+          );
+          sourceJS =
+            "var " + cls.exportAs + " = {\n" + objects + "};\n" + sourceJS;
+        }
       }
-
-      else if (cls.collection.some((fn) => fn.knownas)) {
-        let objects = ""
-        cls.collection.forEach((fn, i) => {
-          if (fn.knownas) {
-            objects += `"${fn.name}": ${
-              typeof fn.knownas === "string" ? fn.knownas : fn.knownas.backend
-            },\n`;
-          }
-        });
-        sourceJS = "var " + cls.exportAs + " = {\n" + objects + "};\n" + sourceJS;
-      }
-    })
+    );
 
     if (!minified) sourceJS = await format(sourceJS);
 
@@ -162,7 +172,7 @@ export default class LunaTranspiler {
         let pragma = ast as Program;
         return `${
           pragma.body.length > 0
-            ? pragma.body.map((s) => this.reallyTranspile(s)).join("\n")
+            ? pragma.body.map((s: any) => this.reallyTranspile(s)).join("\n")
             : ""
         }`;
 
@@ -184,17 +194,21 @@ export default class LunaTranspiler {
         if (func.name === "@ANONYMOUS") {
           return `${func.async ? "async " : ""}(${
             func.parameters.length > 0
-              ? func.parameters.map((k) => this.reallyTranspile(k)).join(",")
+              ? func.parameters
+                  .map((k: any) => this.reallyTranspile(k))
+                  .join(",")
               : ""
           }) => {${
             func.body.length > 0
-              ? func.body.map((k) => this.reallyTranspile(k)).join("\n")
+              ? func.body.map((k: any) => this.reallyTranspile(k)).join("\n")
               : ""
           }}`;
         } else
           return `${func.async ? "async " : ""}function ${func.name}(${
             func.parameters.length > 0
-              ? func.parameters.map((k) => this.reallyTranspile(k)).join(",")
+              ? func.parameters
+                  .map((k: any) => this.reallyTranspile(k))
+                  .join(",")
               : ""
           }) {${
             func.body.length > 0
@@ -237,7 +251,7 @@ export default class LunaTranspiler {
       case "ArrayLiteral":
         let arr = ast as ArrayLiteral;
         return `[${arr.elements
-          .map((k) => this.reallyTranspile(k))
+          .map((k: any) => this.reallyTranspile(k))
           .join(",")}]`;
 
       case "NumericLiteral":
@@ -247,7 +261,7 @@ export default class LunaTranspiler {
         let callExpr = ast as CallExpr;
         return `${this.reallyTranspile(callExpr.caller)}(${
           callExpr.args.length > 0
-            ? callExpr.args.map((k) => this.reallyTranspile(k)).join(",")
+            ? callExpr.args.map((k: any) => this.reallyTranspile(k)).join(",")
             : ""
         })`;
 
@@ -288,7 +302,10 @@ export default class LunaTranspiler {
       case "ObjectLiteral":
         let objectLiteral = ast as ObjectLiteral;
         return `{${objectLiteral.properties
-          .map((p) => p.key + ":" + this.reallyTranspile(p.value))
+          .map(
+            (p: { key: string; value: any }) =>
+              p.key + ":" + this.reallyTranspile(p.value)
+          )
           .join(",")}}`;
 
       case "IfStatement":
@@ -297,10 +314,14 @@ export default class LunaTranspiler {
           (ifStat.consequent.length <= 1
             ? this.reallyTranspile(ifStat.consequent[0]) + ";"
             : "{" +
-              ifStat.consequent.map((s) => this.reallyTranspile(s)).join("\n") +
+              ifStat.consequent
+                .map((s: any) => this.reallyTranspile(s))
+                .join("\n") +
               "}") +
           (<IFStatement>ifStat.alternate
-            ? `else { ${(ifStat.alternate as Statement[]).map((s) => this.reallyTranspile(s))} }`
+            ? `else { ${(ifStat.alternate as Statement[]).map((s) =>
+                this.reallyTranspile(s)
+              )} }`
             : "")
         }`;
 
@@ -311,7 +332,7 @@ export default class LunaTranspiler {
             ? this.reallyTranspile(whileStat.consequent[0]) + ";"
             : "{" +
               whileStat.consequent
-                .map((s) => this.reallyTranspile(s))
+                .map((s: any) => this.reallyTranspile(s))
                 .join("\n") +
               "}"
         }`;
@@ -323,7 +344,7 @@ export default class LunaTranspiler {
         let debugStatement = ast as DebugStatement;
         return `\n// LUNA ~ DEBUG:\n//   ${
           debugStatement.props
-            .map((p) => this.reallyTranspile(p))
+            .map((p: any) => this.reallyTranspile(p))
             .join(";\n//   ") + "\n"
         }`;
 
@@ -332,7 +353,7 @@ export default class LunaTranspiler {
         return (
           memExpr.parent.value +
           memExpr.properties
-            .map((t) => {
+            .map((t: any) => {
               return t.kind === "Identifier"
                 ? `.${t.value}`
                 : `[${this.reallyTranspile(t)}]`;
@@ -346,7 +367,11 @@ export default class LunaTranspiler {
       case "ReturnExpr":
         let value = (<ReturnExpr>ast).value;
 
-        if (["WhileStatement", "IfStatement", "FunctionDeclaration"].includes(value.kind)) {
+        if (
+          ["WhileStatement", "IfStatement", "FunctionDeclaration"].includes(
+            value.kind
+          )
+        ) {
           return `${this.reallyTranspile(value)}`;
         }
         return "return " + this.reallyTranspile(value);
@@ -381,8 +406,6 @@ export default class LunaTranspiler {
         return `${this.reallyTranspile((ast as EqualityExpr).left)}${
           (<EqualityExpr>ast).operator
         }${this.reallyTranspile((<EqualityExpr>ast).right)}`;
-
-
 
       default:
         throw Err("TranspilerError", `Unsupported AST Node Type: ${ast.kind}`);

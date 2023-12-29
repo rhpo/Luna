@@ -115,7 +115,9 @@ export interface FNVal extends RuntimeValue {
 
 interface PrototypeItem {
   name: string;
-  value: RuntimeValue | ((args: RuntimeValue[]) => RuntimeValue);
+  value:
+    | RuntimeValue
+    | ((args: RuntimeValue[], scope?: Environment) => RuntimeValue);
 }
 
 /**
@@ -255,6 +257,34 @@ export const MK = {
   },
 };
 
+function reassignproto(runtimeValue: RuntimeValue) {
+  let v = runtimeValue.value;
+  switch (typeof v) {
+    case "string":
+      Object.setPrototypeOf(v, String.prototype);
+      break;
+
+    case "number":
+      Object.setPrototypeOf(v, Number.prototype);
+      break;
+
+    case "boolean":
+      Object.setPrototypeOf(v, Boolean.prototype);
+      break;
+
+    case "object":
+      if (Array.isArray(v)) {
+        Object.setPrototypeOf(v, Array.prototype);
+      } else {
+        Object.setPrototypeOf(v, Object.prototype);
+      }
+      break;
+  }
+
+  runtimeValue.value = v;
+  return runtimeValue;
+}
+
 const prototypelist: Record<string, PrototypeItem[]> = {
   number: [
     {
@@ -269,6 +299,7 @@ const prototypelist: Record<string, PrototypeItem[]> = {
     {
       name: "length",
       value(args: RuntimeValue[]) {
+        args = args.map(reassignproto);
         return MK.number(args[0].value.length);
       },
     },
@@ -276,7 +307,180 @@ const prototypelist: Record<string, PrototypeItem[]> = {
     {
       name: "at",
       value(args: RuntimeValue[]) {
+        args = args.map(reassignproto);
         return args[0].value[args[1].value];
+      },
+    },
+
+    {
+      name: "push",
+      value(args: RuntimeValue[]) {
+        args = args.map(reassignproto);
+        args[0].value[args[0].value.length] = args[1];
+        console.log(Object.getPrototypeOf(args[0].value));
+        return MK.nil();
+      },
+    },
+
+    {
+      name: "pop",
+      value(args: RuntimeValue[]) {
+        args = args.map(reassignproto);
+        return args[0].value.pop();
+      },
+    },
+
+    {
+      name: "shift",
+      value(args: RuntimeValue[]) {
+        args = args.map(reassignproto);
+        return args[0].value.shift();
+      },
+    },
+
+    {
+      name: "unshift",
+      value(args: RuntimeValue[]) {
+        args = args.map(reassignproto);
+        return args[0].value.unshift(args[1]);
+      },
+    },
+
+    {
+      name: "slice",
+      value(args: RuntimeValue[]) {
+        args = args.map(reassignproto);
+        return MK.array(args[0].value.slice(args[1].value, args[2].value));
+      },
+    },
+
+    {
+      name: "splice",
+      value(args: RuntimeValue[]) {
+        args = args.map(reassignproto);
+        return MK.array(
+          args[0].value.splice(args[1].value, args[2].value, args[3])
+        );
+      },
+    },
+
+    {
+      name: "reverse",
+      value(args: RuntimeValue[]) {
+        args = args.map(reassignproto);
+        return MK.array(args[0].value.reverse());
+      },
+    },
+
+    {
+      name: "sort",
+      value(args: RuntimeValue[], scope: any) {
+        args = args.map(reassignproto);
+        let func = args[1] as any as FNVal;
+
+        return MK.array(
+          args[0].value.sort(
+            (a: RuntimeValue, b: RuntimeValue) =>
+              evaluateFunctionCall(func, [a, b], scope).value
+          )
+        );
+      },
+    },
+
+    {
+      name: "map",
+      value(args: RuntimeValue[], scope: any) {
+        args = args.map(reassignproto);
+        return MK.array(
+          args[0].value.map((e: RuntimeValue) =>
+            evaluateFunctionCall(args[1] as any as FNVal, [e], scope)
+          )
+        );
+      },
+    },
+
+    {
+      name: "filter",
+      value(args: RuntimeValue[], scope: any) {
+        args = args.map(reassignproto);
+        return MK.array(
+          args[0].value.filter(
+            (e: RuntimeValue) =>
+              evaluateFunctionCall(args[1] as any as FNVal, [e], scope).value
+          )
+        );
+      },
+    },
+
+    {
+      name: "reduce",
+      value(args: RuntimeValue[], scope: any) {
+        args = args.map(reassignproto);
+        return args[0].value.reduce((a: RuntimeValue, b: RuntimeValue) =>
+          evaluateFunctionCall(args[1] as any as FNVal, [a, b], scope)
+        );
+      },
+    },
+
+    {
+      name: "join",
+      value(args: RuntimeValue[]) {
+        args = args.map(reassignproto);
+        return MK.string(
+          args[0].value.map((e: any) => e.value).join(args[1].value)
+        );
+      },
+    },
+
+    {
+      name: "has",
+      value(args: RuntimeValue[]) {
+        args = args.map(reassignproto);
+        return MK.bool(
+          args[0].value.some((e: RuntimeValue) => {
+            return e.type === args[1].type && e.value === args[1].value;
+          })
+        );
+      },
+    },
+
+    {
+      name: "find",
+      value(args: RuntimeValue[], scope: any) {
+        args = args.map(reassignproto);
+        let func = args[1] as any as FNVal;
+
+        return args[0].value.find((e: RuntimeValue) => {
+          return evaluateFunctionCall(func, [e], scope).value;
+        });
+      },
+    },
+
+    {
+      name: "index",
+      value(args: RuntimeValue[], scope: any) {
+        args = args.map(reassignproto);
+        let func = args[1] as any as FNVal;
+
+        return MK.number(
+          args[0].value.findIndex((e: RuntimeValue) => {
+            return evaluateFunctionCall(func, [e], scope).value;
+          })
+        );
+      },
+    },
+
+    {
+      name: "each",
+      value(args, scope: any) {
+        args = args.map(reassignproto);
+        let func = args[1] as any as FNVal;
+
+        args[0].value.forEach((e: RuntimeValue) => {
+          evaluateFunctionCall(func, [e], scope);
+        });
+
+        return MK.nil();
       },
     },
   ],
@@ -284,13 +488,13 @@ const prototypelist: Record<string, PrototypeItem[]> = {
   func: [
     {
       name: "call",
-      value(args) {
+      value(args, scope: any) {
         let fn = args.splice(0, 1)[0];
 
         return evaluateFunctionCall(
           fn as any as FNVal,
           args as RuntimeValue[],
-          new Environment()
+          scope
         );
       },
     },
@@ -345,6 +549,21 @@ const prototypelist: Record<string, PrototypeItem[]> = {
             throw Err("ArgumentError", "Argument B is not a type of string");
 
           return MK.string(string.replaceAll(a, b));
+        } else return MK.nil();
+      },
+    },
+
+    {
+      name: "split",
+      value(args) {
+        if (args[0].value) {
+          let string = args[0].value;
+          let a = args[1]?.value;
+
+          if (typeof a === "undefined")
+            throw Err("ArgumentError", "Argument A is not a type of string");
+
+          return MK.array(string.split(a).map((s: any) => MK.string(s)));
         } else return MK.nil();
       },
     },

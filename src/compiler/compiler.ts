@@ -68,9 +68,11 @@ export default class LunaTranspiler {
 
     if (this.mainFuncCall) {
       let mainIdx = ast.body.findIndex(
-        (s) => s.kind === "FunctionDeclaration" && (s as FunctionDeclaration)?.name === "main"
+        (s) =>
+          s.kind === "FunctionDeclaration" &&
+          (s as FunctionDeclaration)?.name === "main"
       );
-  
+
       if (mainIdx > -1) {
         let callExpr = {
           kind: "CallExpr",
@@ -87,12 +89,12 @@ export default class LunaTranspiler {
               },
               args: [],
               computed: false,
-            }
+            },
           ],
-  
-          computed: false
+
+          computed: false,
         } as Expression;
-  
+
         ast.body.splice(mainIdx + 1, 0, callExpr);
       }
     }
@@ -100,38 +102,35 @@ export default class LunaTranspiler {
     let sourceJS = this.reallyTranspile(ast);
 
     native.variables.forEach((v) => {
-      if (!['null', 'true', 'false'].includes(v.name)) {
-
+      if (!["null", "true", "false"].includes(v.name)) {
         let value: any = v.value;
 
         if (value?.type === "array") {
-          value = `[${value.value.map((v: any) => stringify(v.value)).join(", ")}]`;
-        }
+          value = `[${value.value
+            .map((v: any) => stringify(v.value))
+            .join(", ")}]`;
+        } else if (value?.type === "object") {
+          value = `{${Object.keys(value.value)
+            .map((k) => `"${k}": ${stringify(value.value[k].value)}`)
+            .join(", ")}}`;
+        } else value = value.value;
 
-        else if (value?.type === "object") {
-          value = `{${Object.keys(value.value).map((k) => `"${k}": ${stringify(value.value[k].value)}`).join(", ")}}`;
-        }
-
-        else value = value.value;
-        
         sourceJS = `var ${v.name} = ${value};\n` + sourceJS;
       }
-    })
+    });
 
     native.nativelib.forEach((cls) => {
-
       if (cls.public || cls.exportAs === "@DEFAULT") {
         cls.collection.forEach((fn) => {
           if (fn.knownas) {
-            sourceJS = `var ${fn.name} = ${
-              typeof fn.knownas === "string" ? fn.knownas : fn.knownas.backend
-            };\n` + sourceJS;
+            sourceJS =
+              `var ${fn.name} = ${
+                typeof fn.knownas === "string" ? fn.knownas : fn.knownas.backend
+              };\n` + sourceJS;
           }
         });
-      }
-
-      else if (cls.collection.some((fn) => fn.knownas)) {
-        let objects = ""
+      } else if (cls.collection.some((fn) => fn.knownas)) {
+        let objects = "";
         cls.collection.forEach((fn, i) => {
           if (fn.knownas) {
             objects += `"${fn.name}": ${
@@ -139,9 +138,10 @@ export default class LunaTranspiler {
             },\n`;
           }
         });
-        sourceJS = "var " + cls.exportAs + " = {\n" + objects + "};\n" + sourceJS;
+        sourceJS =
+          "var " + cls.exportAs + " = {\n" + objects + "};\n" + sourceJS;
       }
-    })
+    });
 
     if (!minified) sourceJS = await format(sourceJS);
 
@@ -300,7 +300,9 @@ export default class LunaTranspiler {
               ifStat.consequent.map((s) => this.reallyTranspile(s)).join("\n") +
               "}") +
           (<IFStatement>ifStat.alternate
-            ? `else { ${(ifStat.alternate as Statement[]).map((s) => this.reallyTranspile(s))} }`
+            ? `else { ${(ifStat.alternate as Statement[]).map((s) =>
+                this.reallyTranspile(s)
+              )} }`
             : "")
         }`;
 
@@ -346,7 +348,11 @@ export default class LunaTranspiler {
       case "ReturnExpr":
         let value = (<ReturnExpr>ast).value;
 
-        if (["WhileStatement", "IfStatement", "FunctionDeclaration"].includes(value.kind)) {
+        if (
+          ["WhileStatement", "IfStatement", "FunctionDeclaration"].includes(
+            value.kind
+          )
+        ) {
           return `${this.reallyTranspile(value)}`;
         }
         return "return " + this.reallyTranspile(value);
@@ -381,8 +387,6 @@ export default class LunaTranspiler {
         return `${this.reallyTranspile((ast as EqualityExpr).left)}${
           (<EqualityExpr>ast).operator
         }${this.reallyTranspile((<EqualityExpr>ast).right)}`;
-
-
 
       default:
         throw Err("TranspilerError", `Unsupported AST Node Type: ${ast.kind}`);

@@ -1,5 +1,10 @@
 import colors from "colors";
-import { ArrayValue, FNVal, NativeFNVal, RuntimeValue } from "../runtime/values";
+import {
+  ArrayValue,
+  FNVal,
+  NativeFNVal,
+  RuntimeValue,
+} from "../runtime/values";
 
 let entrance = 0;
 export function colorize(
@@ -7,6 +12,8 @@ export function colorize(
   isInner: boolean = false,
   noString: boolean = false
 ) {
+  // return back the prototype of the result.value (reset it to default)
+
   switch (result.type) {
     case "string":
       return noString ? result.value : colors.green('"' + result.value + '"');
@@ -17,19 +24,39 @@ export function colorize(
       let max = array.value.length > 16;
 
       if (!max) {
-        return "[".cyan + array.value.map(function(e): any {return colorize(e, true)}).join(', ') + "]".cyan;
-      }
-
-      else {
-
+        return (
+          "[".cyan +
+          array.value
+            .map(function (e): any {
+              return colorize(e, true);
+            })
+            .join(", ") +
+          "]".cyan
+        );
+      } else {
         let arrayFrom0to16 = array.value.slice(0, 16);
 
-        return `(${array.value.length} elements) `.cyan + "[".yellow + arrayFrom0to16.map(e => function() {return colorize(e, true)}).join(', ') + ", ...".gray + "]".yellow;
+        return (
+          `(${array.value.length} elements) `.cyan +
+          "[".yellow +
+          arrayFrom0to16
+            .map(
+              (e) =>
+                function () {
+                  return colorize(e, true);
+                }
+            )
+            .join(", ") +
+          ", ...".gray +
+          "]".yellow
+        );
       }
 
     case "number":
       if (!Number.isFinite(result.value))
-        return Number.isNaN(result.value) ? "NaN".cyan :  colors.cyan(result.value.toString().toLowerCase());
+        return Number.isNaN(result.value)
+          ? "NaN".cyan
+          : colors.cyan(result.value.toString().toLowerCase());
       else return colors.yellow(result.value);
 
     case "undef":
@@ -64,25 +91,23 @@ export function colorize(
         }}`.gray
       );
     }
-    
+
     case "native-fn": {
       let fn = result as NativeFNVal;
 
       const { name } = fn;
 
-      return (
-
-        ! isInner ?
-        `${colors.magenta("fn")} ${name.cyan} {\n` +
-        "  " +
-        `${
-          "  ".repeat(entrance) +
-          "(NAT-C)...".italic +
-          "\n" +
-          "  ".repeat(entrance) +
-          "}"
-        }` : `${colors.magenta("fn")} ${name.cyan}`	
-      );
+      return !isInner
+        ? `${colors.magenta("fn")} ${name.cyan} {\n` +
+            "  " +
+            `${
+              "  ".repeat(entrance) +
+              "(NAT-C)...".italic +
+              "\n" +
+              "  ".repeat(entrance) +
+              "}"
+            }`
+        : `${colors.magenta("fn")} ${name.cyan}`;
     }
 
     case "boolean":

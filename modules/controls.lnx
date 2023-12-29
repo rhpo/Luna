@@ -4,14 +4,34 @@
 
 api = mother.import("pkg:robotjs");
 
+state: out = {
+   up: "up",
+   down: "down"
+}
+
 # API: Move
 out fn move x y {
     api.moveMouse(x, y)
 }
 
-# API: Click
-out fn click x y {
-    api.mouseClick(x, y)
+# API: Toggle
+out fn toggle key state {
+    api.keyToggle(key, state)
+}
+
+# API: Type String
+out fn type str {
+    api.typeString(str)
+}
+
+# API: Tap String
+out fn tap key {
+    api.keyTap(key)
+}
+
+# API: MouseClick
+out fn mouseclick button {
+    api.mouseClick(button)
 }
 
 # API: Scroll
@@ -37,11 +57,6 @@ out fn pos {
 # API: Get Color
 out fn color x y {
     api.getPixelColor(x, y)
-}
-
-# API: Type String
-out fn type str {
-    api.typeString(str)
 }
 
 # API: Size

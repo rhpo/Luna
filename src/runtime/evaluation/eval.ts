@@ -15,6 +15,7 @@ import {
   FunctionDeclaration,
   IFStatement,
   Identifier,
+  Import,
   InequalityExpr,
   LogicalExpr,
   MemberExpr,
@@ -643,11 +644,12 @@ export function stringify(expr: Expression): string {
     case "FunctionDeclaration":
       let fn = expr as FunctionDeclaration;
       return (
-        "fn " +
-        fn.name +
+        (fn.name === "@ANONYMOUS" ? "lambda" : "fn" + fn.name) +
         " " +
         fn.parameters.map((param) => param.assigne).join(" ") +
-        " { ... }"
+        " { \n" +
+        fn.body.map((prop) => "  " + stringify(prop)).join("\n") +
+        "\n}"
       );
 
     case "AssignmentExpr":
@@ -670,6 +672,77 @@ export function stringify(expr: Expression): string {
             : ""
         } = ` +
         stringify((expr as ActionAssignmentExpr).value)
+      );
+
+    case "ReturnExpr":
+      return "return " + stringify((expr as any).value);
+
+    case "ObjectLiteral":
+      return (
+        "{" +
+        (expr as ObjectLiteral).properties
+          .map((prop) => stringify(prop))
+          .join(", ") +
+        "}"
+      );
+
+    case "ArrayLiteral":
+      return (
+        "[" +
+        (expr as ArrayLiteral).elements.map((prop) => stringify(prop)) +
+        "]"
+      );
+
+    case "WhileStatement":
+      return (
+        "while " +
+        stringify((expr as WhileStatement).test) +
+        " { \n" +
+        (expr as WhileStatement).consequent
+          .map((prop) => "  " + stringify(prop))
+          .join("\n") +
+        "\n}"
+      );
+
+    case "ForStatement":
+      return (
+        "for " +
+        stringify((expr as ForStatement).declaration) +
+        " " +
+        stringify((expr as ForStatement).test) +
+        " " +
+        stringify((expr as ForStatement).increaser) +
+        " { \n" +
+        (expr as ForStatement).body.map((prop) => stringify(prop)).join("\n") +
+        "\n}"
+      );
+
+    case "IfStatement":
+      return (
+        "if " +
+        stringify((expr as IFStatement).test) +
+        " { \n" +
+        (expr as IFStatement).consequent
+          .map((prop) => "  " + stringify(prop))
+          .join("\n") +
+        "\n}"
+      );
+
+    case "UnaryExpr":
+      return (
+        (expr as UnaryExpr).operator + stringify((expr as UnaryExpr).value)
+      );
+
+    case "UseStatement":
+      return "use " + stringify((expr as UseStatement).path) + " as ...\n";
+
+    case "InequalityExpr":
+      return (
+        stringify((expr as InequalityExpr).left) +
+        " " +
+        (expr as InequalityExpr).operator +
+        " " +
+        stringify((expr as InequalityExpr).right)
       );
 
     default:
@@ -766,11 +839,16 @@ export function evaluateCallExpr(
 }
 
 export function evaluateFunctionCall(
-  expression: FNVal,
+  expression: FNVal | NativeFNVal,
   args: RuntimeValue[],
   env: Environment
 ): RuntimeValue {
   const fn = expression;
+
+  if (fn.type == "native-fn") {
+    let result = (fn as NativeFNVal).call(args, env);
+    return result;
+  }
 
   let f = fn as FNVal;
 

@@ -34,7 +34,7 @@ export class Luna {
 
     if (optionalContext) {
       let newEnv = Object.assign({}, this.context);
-      Object.setPrototypeOf(newEnv, this.context?.__proto__); // fixed the "declareVar is undefined" issue
+      Object.setPrototypeOf(newEnv, Object.getPrototypeOf(this.context)); // fixed the "declareVar is undefined" issue
 
       newEnv.variables = new Map([
         ...newEnv.variables,

@@ -1,10 +1,16 @@
 import { colorize } from "../lib/ui";
-import { FNVal, MK, NativeFNVal, RuntimeValue } from "../runtime/values";
+import {
+  FNVal,
+  MK,
+  NativeFNVal,
+  ObjectValue,
+  RuntimeValue,
+} from "../runtime/values";
 import { Luna } from "../luna";
 
 import Environment from "../lib/env";
 import PromptSync from "prompt-sync";
-import { evaluateFunctionCall } from "../runtime/evaluation/eval";
+import { evaluateFunctionCall, stringify } from "../runtime/evaluation/eval";
 
 let prompt = PromptSync();
 
@@ -76,146 +82,46 @@ let native: Functions = {
         },
 
         {
-          name: "each",
-          nativeName: "globalThis → EACH",
-          knownas: "(arr, fn) => arr.forEach(fn)",
-          body: (args: RuntimeValue[], scope: Environment): RuntimeValue => {
-            let array = args[0];
-            let fn = args[1] as FNVal;
+          name: "keys",
+          knownas: "(i) => Object.keys(i)",
+          nativeName: "globalThis → KEYS",
 
-            if (!array || array.type !== "array" || !fn || fn.type !== "fn") {
-              return MK.undefined();
-            } else {
-              let i = 0;
-
-              while (i < array.value.length) {
-                let v = array.value[i];
-
-                evaluateFunctionCall(fn, [v, MK.number(i)], scope);
-
-                i++;
-              }
-
-              return MK.undefined();
+          body: (args: RuntimeValue[]): RuntimeValue => {
+            switch (args[0]?.type) {
+              case "object":
+                return MK.array(
+                  Array.from((args[0] as ObjectValue).properties.keys()).map(
+                    (a) => MK.string(a)
+                  )
+                );
+              default:
+                return MK.array([]);
             }
           },
         },
 
         {
-          name: "map",
-          nativeName: "globalThis → MAP",
-          knownas: "(arr, fn) => arr.map(fn)",
-          body: (args: RuntimeValue[], scope: Environment): RuntimeValue => {
-            let array = args[0];
-            let fn = args[1] as FNVal | NativeFNVal;
+          name: "src",
+          knownas: "(i) => null",
 
-            if (
-              array.type !== "array" ||
-              !fn ||
-              (fn.type !== "fn" && (fn as any).type !== "native-fn")
-            ) {
-              return MK.undefined();
-            } else {
-              if ((fn as FNVal).type === "fn") {
-                let i = 0;
+          nativeName: "globalThis → SRC",
 
-                let result = [];
+          body: (args: RuntimeValue[]): RuntimeValue => {
+            let func = args[0] as FNVal;
 
-                while (i < array.value.length) {
-                  let v = array.value[i];
-
-                  let r = evaluateFunctionCall(
-                    fn as FNVal,
-                    [v, MK.number(i)],
-                    scope
-                  );
-
-                  result.push(r);
-
-                  i++;
-                }
-
-                return MK.array(result);
-              } else {
-                let i = 0;
-
-                let result = [];
-
-                while (i < array.value.length) {
-                  let v = array.value[i];
-
-                  let r = (fn as NativeFNVal).call([v, MK.number(i)], scope);
-
-                  result.push(r);
-
-                  i++;
-                }
-
-                return MK.array(result);
-              }
-            }
-          },
-        },
-
-        {
-          name: "filter",
-          nativeName: "globalThis → FILTER",
-          knownas: "(arr, fn) => arr.filter(fn)",
-          body: (args: RuntimeValue[], scope: Environment): RuntimeValue => {
-            let array = args[0];
-            let fn = args[1] as NativeFNVal | FNVal;
-
-            if (
-              array.type !== "array" ||
-              !fn ||
-              (fn.type !== "fn" && (fn as any).type !== "native-fn")
-            ) {
-              return MK.undefined();
-            } else {
-              if ((fn as FNVal).type === "fn") {
-                let i = 0;
-
-                let result = [];
-
-                while (i < array.value.length) {
-                  let v = array.value[i];
-
-                  let r = evaluateFunctionCall(
-                    fn as FNVal,
-                    [v, MK.number(i)],
-                    scope
-                  );
-
-                  if (r.value) {
-                    result.push(r);
-                  }
-
-                  i++;
-                }
-
-                return MK.array(result);
-              } else {
-                let i = 0;
-
-                let result = [];
-
-                while (i < array.value.length) {
-                  let v = array.value[i];
-
-                  let r = (fn as NativeFNVal).call(
-                    [v, MK.number(i)],
-                    new Environment()
-                  );
-
-                  if (r.value) {
-                    result.push(r);
-                  }
-
-                  i++;
-                }
-
-                return MK.array(result);
-              }
+            if (func.type != "fn") return MK.nil();
+            else {
+              return MK.string(
+                (func.export ? "out ".green : "") +
+                  "fn ".magenta +
+                  func.name.blue +
+                  func.parameters.map((a) => a.assigne.value).join(" ").green +
+                  "{".grey +
+                  "\n" +
+                  func.body.map((a) => "  " + stringify(a)).join("\n") +
+                  "\n" +
+                  "}".grey
+              );
             }
           },
         },
