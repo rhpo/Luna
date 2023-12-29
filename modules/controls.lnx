@@ -2,11 +2,11 @@
 # Luna Module: Control.lnx
 # WRITTEN BY: The author of Luna
 
-api = mother.import("pkg:robotjs");
+api = mother.import("pkg:robotjs"); # CREDIT: << RobotJS on NPM >>
 
-state: out = {
-   up: "up",
-   down: "down"
+states: out = {
+	up: 'up',
+	down: 'down'
 }
 
 # API: Move
@@ -14,9 +14,19 @@ out fn move x y {
     api.moveMouse(x, y)
 }
 
-# API: Toggle
+# API: Toggle String
+out fn toggle key state=(states.down) {
+    api.keyToggle(key, state);
+}
+
+# API: Click String
+out fn click key {
+    api.keyTap(key);
+}
+
+# API: Toggle String
 out fn toggle key state {
-    api.keyToggle(key, state)
+    api.keyToggle(key, state);
 }
 
 # API: Type String
@@ -24,14 +34,14 @@ out fn type str {
     api.typeString(str)
 }
 
-# API: Tap String
-out fn tap key {
-    api.keyTap(key)
+# API: Click
+out fn mouseclick key {
+    api.mouseClick(key)
 }
 
-# API: MouseClick
-out fn mouseclick button {
-    api.mouseClick(button)
+# API: Click
+out fn mousetoggle key state {
+    api.mouseToggle(state, key)
 }
 
 # API: Scroll

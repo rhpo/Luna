@@ -7,9 +7,7 @@ config: const = {
 }
 
 out fn sum arr {
-	res = 0
-	each(arr, lambda c { res = res + c });
-	res
+	arr.reduce(lambda x y { x + y })
 }
 
 out fn sign n {
@@ -48,6 +46,59 @@ out fn fact n {
 	n < 2 ? 1 or n * fact(n - 1)
 }
 
+out fn range x y z {
+	res = []
+
+	# y = y ? y or x
+
+	# x = y ? x or 0
+
+	# BUG: a = b ? v1 or v2 doesn't work, a is still set to 'undef' because
+	# there's a parser error, a = b ? v1 or v2 is interpreted as:
+	# a = b ? v1 or v2    ->   (a = b) ? v1 or v2
+	# QUICK_FIX_SUGGESTION: on parseAssignment, use parseExpression to parse the right
+	# hand side
+
+	# for now, use IF Statements... (BUG, SO USE experimental IF EXPRESSIONS)
+
+	# DANGEROUS BUG: WARNINGGG!
+
+	# ASSIGNMENT EXPRESSION IS BEING TREATED
+	# INSIDE THE IF STATEMENT AS IF Y IS A NEW DECLARED VARIABLE
+	# IN A STANDALONE ENVIRONMENT INSIDE IF STATEMENT ONLY! THAT'S A HUGE MISTAKE!
+	# IF y IS ALREADY DECLARED IN THE PARENT ENV, USE THE PARENT ENV ONE, NOT DECLARE
+	# A NEW y VARIABLE INSIDE THE "IFSTATEMENT ENVIRONMENT"
+
+	# FIX IT SOON ?!!!
+
+	if typeget y == "undef" {
+		y = x
+		x = 0
+
+		# !(NOTE 1): print(y) -> 2
+	}
+
+	# !(NOTE 2): print(y) -> undef
+
+	# for now... use experimental if "expressions"
+
+	y = if y {
+		y
+	} else {x}
+
+	x = if y {
+		x
+	} else {0}
+	
+	for i = x; i < y; i++ {
+		res.push(z ? z or i)
+		print(i)
+	}
+
+	res
+}
+		
+		
 out fn cos x {
 	precision = config.PRECISION
 
