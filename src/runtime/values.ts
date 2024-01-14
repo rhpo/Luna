@@ -317,7 +317,6 @@ const prototypelist: Record<string, PrototypeItem[]> = {
       value(args: RuntimeValue[]) {
         args = args.map(reassignproto);
         args[0].value[args[0].value.length] = args[1];
-        console.log(Object.getPrototypeOf(args[0].value));
         return MK.nil();
       },
     },
@@ -476,8 +475,8 @@ const prototypelist: Record<string, PrototypeItem[]> = {
         args = args.map(reassignproto);
         let func = args[1] as any as FNVal;
 
-        args[0].value.forEach((e: RuntimeValue) => {
-          evaluateFunctionCall(func, [e], scope);
+        args[0].value.forEach((e: RuntimeValue, idx: number) => {
+          evaluateFunctionCall(func, [e, MK.number(idx)], scope);
         });
 
         return MK.nil();
@@ -515,12 +514,69 @@ const prototypelist: Record<string, PrototypeItem[]> = {
       value(args) {
         let this_ = args[0] as any as ObjectValue;
 
-        return MK.object(
-          Object.assign(
-            {},
-            [...this_.properties.keys()].map((k) => MK.auto(k))
+        // return MK.object(
+        //   Object.assign(
+        //     {},
+        //     [...this_.properties.keys()].map((k) => MK.auto(k))
+        //   )
+        // );
+
+        // return array instead of object
+
+        return MK.array([...this_.properties.keys()].map((k) => MK.auto(k)));
+      },
+    },
+
+    {
+      name: "values",
+      value(args) {
+        let this_ = args[0] as any as ObjectValue;
+
+        return MK.array([...this_.properties.values()].map((k) => MK.auto(k)));
+      },
+    },
+
+    {
+      name: "entries",
+      value(args) {
+        let this_ = args[0] as any as ObjectValue;
+
+        return MK.array(
+          [...this_.properties.entries()].map((k) =>
+            MK.array(k.map((v) => MK.auto(v)))
           )
         );
+      },
+    },
+
+    {
+      name: "has",
+      value(args) {
+        let this_ = args[0] as any as ObjectValue;
+
+        return MK.bool(this_.properties.has(args[1].value));
+      },
+    },
+
+    {
+      name: "set",
+      value(args) {
+        let this_ = args[0] as any as ObjectValue;
+
+        this_.properties.set(args[1].value, args[2]);
+
+        return MK.nil();
+      },
+    },
+
+    {
+      name: "delete",
+      value(args) {
+        let this_ = args[0] as any as ObjectValue;
+
+        this_.properties.delete(args[1].value);
+
+        return MK.nil();
       },
     },
   ],

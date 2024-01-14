@@ -6,6 +6,37 @@ import {
   RuntimeValue,
 } from "../runtime/values";
 
+function reassignproto(runtimeValue: RuntimeValue) {
+  let v = runtimeValue.value;
+
+  if (v) {
+    switch (typeof v) {
+      case "string":
+        Object.setPrototypeOf(v, String.prototype);
+        break;
+
+      case "number":
+        Object.setPrototypeOf(v, Number.prototype);
+        break;
+
+      case "boolean":
+        Object.setPrototypeOf(v, Boolean.prototype);
+        break;
+
+      case "object":
+        if (Array.isArray(v)) {
+          Object.setPrototypeOf(v, Array.prototype);
+        } else {
+          Object.setPrototypeOf(v, Object.prototype);
+        }
+        break;
+    }
+  }
+
+  runtimeValue.value = v;
+  return runtimeValue;
+}
+
 let entrance = 0;
 export function colorize(
   result: RuntimeValue,
@@ -14,9 +45,15 @@ export function colorize(
 ) {
   // return back the prototype of the result.value (reset it to default)
 
+  result = reassignproto(result);
+
   switch (result.type) {
     case "string":
-      return noString ? result.value : colors.green('"' + result.value + '"');
+      return noString
+        ? result.value
+        : colors.green(
+            "'" + result.value.replaceAll("'", colors.dim("'")) + "'"
+          );
 
     case "array":
       let array = result as ArrayValue;
@@ -40,12 +77,9 @@ export function colorize(
           `(${array.value.length} elements) `.cyan +
           "[".yellow +
           arrayFrom0to16
-            .map(
-              (e) =>
-                function () {
-                  return colorize(e, true);
-                }
-            )
+            .map(function (e): any {
+              return colorize(e, true);
+            })
             .join(", ") +
           ", ...".gray +
           "]".yellow

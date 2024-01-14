@@ -82,6 +82,59 @@ let native: Functions = {
         },
 
         {
+          name: "range",
+          knownas: `(i, j) => {
+            if (typeof j === "undefined") {
+              j = i;
+              i = 0;
+            }
+
+            let result = [];
+
+            for (let k = i; k < j; k++) {
+              result.push(k);
+            }
+
+            return result;
+          }`,
+
+          nativeName: "globalThis → RANGE",
+
+          body: (args: RuntimeValue[]): RuntimeValue => {
+            let i = args[0];
+            let j = args[1];
+
+            if (!i) return MK.array([]);
+
+            if (!j) {
+              j = i;
+              i = MK.number(0);
+            }
+
+            let result = [];
+
+            for (let k = i.value; k < j.value; k++) {
+              result.push(MK.number(k));
+            }
+
+            return MK.array(result);
+          },
+        },
+
+        {
+          // return an array of prototype names
+          name: "proto",
+          knownas: "(i) => Object.getOwnPropertyNames(i)",
+          nativeName: "globalThis → PROTO",
+          body: (args: RuntimeValue[]): RuntimeValue => {
+            let obj = args[0] || MK.undefined();
+            return obj.prototypes
+              ? MK.array(Object.keys(obj.prototypes).map(MK.string))
+              : MK.array([]);
+          },
+        },
+
+        {
           name: "keys",
           knownas: "(i) => Object.keys(i)",
           nativeName: "globalThis → KEYS",

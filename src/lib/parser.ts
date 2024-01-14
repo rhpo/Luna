@@ -214,11 +214,13 @@ export default class Parser {
 
       let cond = left;
 
-      //! BIG PROBLEM HERE ! IT THROWS THIS ERR!
+      ////OLD: ! BIG PROBLEM HERE ! IT THROWS THIS ERR!
 
-      //! SyntaxError: Unexpected token BinaryOperator, expecting: Colon
-      //! 1. | fn factorialRecursive number {
-      //! 2. |   number > 1 ? number * factorialRecursive(number - 1) : 1
+      //// SyntaxError: Unexpected token BinaryOperator, expecting: Colon
+      //// 1. | fn factorialRecursive number {
+      //// 2. |   number > 1 ? number * factorialRecursive(number - 1) : 1
+
+      // Fixed: use "or" instead of "colon" (ternary operator)
 
       let expr = this.parseExpression();
 
@@ -481,8 +483,8 @@ export default class Parser {
     return left;
   }
 
-  private parseMemberOrMemberCallExpression(): Expression {
-    const member = this.parseMemberExpression(); // good
+  private parseMemberOrMemberCallExpression(m?: Expression): Expression {
+    const member = this.parseMemberExpression(m); // good
 
     if (this.at() && this.at().type === TokenType.OpenParen) {
       // this.eat();
@@ -506,19 +508,25 @@ export default class Parser {
       this.at().type === TokenType.Dot ||
       this.at().type === TokenType.OpenBracket
     ) {
+      return this.parseMemberOrMemberCallExpression(callExpression);
 
-      let m = callExpression
-
-      let k = this.parseMemberExpression(m);
-
-      return k;
       // throw Err(
       //   "LunaError",
       //   "Cannot implement CallExpressions inside MemberExpressions (Unsupported)"
       // );
     }
 
-    this.eatOptional();
+    this.eatOptional(); // eat the semicolon
+
+    if (this.at().type === TokenType.Dot) {
+      this.eat();
+
+      let m = callExpression;
+
+      let k = this.parseMemberOrMemberCallExpression(m);
+
+      return k;
+    }
 
     return callExpression;
   }
@@ -573,7 +581,8 @@ export default class Parser {
         if (!["MemberExpr", "Identifier"].includes(c.kind)) {
           throw Err(
             "SyntaxError",
-            `Unexpected token '${c.kind
+            `Unexpected token '${
+              c.kind
             }', expecting 'Identifier'${this.where()}`
           );
         }
@@ -736,7 +745,26 @@ export default class Parser {
         );
       }
 
-      let value = this.parseExpression();
+      let value = this.parsePrimaryExpression();
+
+      if (this.at().type === TokenType.BinaryOperator) {
+        const op2 = this.eat().value;
+
+        const right = this.parseUnaryExpression();
+
+        let binaryExpr = {
+          kind: "BinaryExpr",
+          left: {
+            kind: "UnaryExpr",
+            value,
+            operator: op,
+          },
+          right,
+          operator: op2,
+        } as BinaryExpr;
+
+        return binaryExpr;
+      }
 
       return {
         operator: op,
@@ -854,8 +882,7 @@ export default class Parser {
     return object;
   }
 
-  private parseArrayDeclaration(): ArrayLiteral {
-
+  private parseArrayDeclaration(): ArrayLiteral | Expression {
     this.expect(TokenType.OpenBracket);
     this.eat();
 
@@ -866,25 +893,29 @@ export default class Parser {
 
     if (this.at().type === TokenType.CloseBracket) {
       this.eat();
-      return result;
-    }
+    } else
+      X: while (this.notEOF() && this.at().type !== TokenType.CloseBracket) {
+        let expr = this.parseExpression();
 
-    X: while (this.notEOF() && this.at().type !== TokenType.CloseBracket) {
-      let expr = this.parseExpression();
+        result.elements.push(expr);
 
-      result.elements.push(expr);
-
-      if (this.at().type === TokenType.Comma) {
-        this.eat();
-      } else if (this.at().type === TokenType.CloseBracket) {
-        this.eat();
-        break X;
-      } else {
-        throw Err(
-          "SyntaxError",
-          `Unexpected token ${strv(this.at().type as TokenType)}, expecting ',' or ']'`
-        )
+        if (this.at().type === TokenType.Comma) {
+          this.eat();
+        } else if (this.at().type === TokenType.CloseBracket) {
+          this.eat();
+          break X;
+        } else {
+          throw Err(
+            "SyntaxError",
+            `Unexpected token ${strv(
+              this.at().type as TokenType
+            )}, expecting ',' or ']'`
+          );
+        }
       }
+
+    if (this.at().type === TokenType.Dot) {
+      result = this.parseMemberOrMemberCallExpression(result) as ArrayLiteral;
     }
 
     return result;
@@ -1105,8 +1136,8 @@ export default class Parser {
       value += fs.existsSync(value + ".ln")
         ? ".ln"
         : fs.existsSync(value + ".lnx")
-          ? ".lnx"
-          : ".ln";
+        ? ".lnx"
+        : ".ln";
     }
 
     if (value.trim() === "") {
@@ -1139,8 +1170,8 @@ export default class Parser {
       path += fs.existsSync(path + ".ln")
         ? ".ln"
         : fs.existsSync(path + ".lnx")
-          ? ".lnx"
-          : ".ln";
+        ? ".lnx"
+        : ".ln";
     }
 
     function isFile(path: string): boolean {

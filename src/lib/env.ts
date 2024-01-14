@@ -38,14 +38,16 @@ export default class Environment {
             let name = fn[0];
             let value = fn[1];
 
-            this.declareVar(
-              name,
-              MK.nativeFunc(
-                (value as fnDec).body,
+            if (!this.parent || !this.parent.lookupVar(name)) {
+              this.declareVar(
+                name,
+                MK.nativeFunc(
+                  (value as fnDec).body,
 
-                name
-              )
-            );
+                  name
+                )
+              );
+            }
           });
         } else {
           let ceejey: { [key: string]: RuntimeValue } = {};
@@ -65,7 +67,8 @@ export default class Environment {
             }
           });
 
-          this.declareVar(moduleName, MK.object(ceejey));
+          if (!this.parent || !this.parent.lookupVar(moduleName))
+            this.declareVar(moduleName, MK.object(ceejey));
         }
       }
     );
@@ -263,12 +266,8 @@ export default class Environment {
   public lookupVar(name: string): RuntimeValue {
     // env: the environment in which the var with the name {name} is defined.
 
-    if (typeof name !== "string") {
-      let evaluated = evaluate(name, this);
-
-      let NAME = name as RuntimeValue;
-      // NAME.prototypes = PROTO.auto(NAME.type as string)?.map(k => k.value);
-    }
+    // Add support for non-variables...
+    if (typeof name !== "string") return evaluate(name, this);
 
     const env = this.resolve(name);
 

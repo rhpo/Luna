@@ -854,6 +854,13 @@ export function evaluateFunctionCall(
 
   const fnScope = env || f.declarationEnv;
 
+  if (f.parameters.length > args.length && sys.dev) {
+    throw Err(
+      "ArgError",
+      `Expected ${f.parameters.length} arguments, got ${args.length}`
+    );
+  }
+
   for (var i = 0; i < f.parameters.length; i++) {
     const variable = f.parameters[i];
 
@@ -1080,81 +1087,12 @@ export function evaluateMemberExprX(
   expression: MemberExprX,
   env: Environment
 ): RuntimeValue {
-  // {
-  //   kind: 'MemberExprX',
-  //   parent: { kind: 'Identifier', value: 'a' },
-  //   properties: [
-  //     { kind: 'Identifier', value: 'b' },
-  //     { kind: 'Identifier', value: 'c' },
-  //     { kind: 'Identifier', value: 'd' }
-  //   ]
-  // }
-
-  // {
-  //   "kind": "MemberExprX",
-  //   "parent": {
-  //     "kind": "CallExpr",
-  //     "caller": {
-  //       "kind": "MemberExprX",
-  //       "parent": {
-  //         "kind": "Identifier",
-  //         "value": "a"
-  //       },
-  //       "properties": [
-  //         {
-  //           "kind": "Identifier",
-  //           "value": "b"
-  //         },
-  //         {
-  //           "kind": "Identifier",
-  //           "value": "c"
-  //         }
-  //       ]
-  //     },
-  //     "args": []
-  //   },
-  //   "properties": [
-  //     {
-  //       "kind": "Identifier",
-  //       "value": "d"
-  //     }
-  //   ]
-  // }
-
   let mainObj = env.lookupVar(
+    // can return a RuntimeValue even if it's not a variable...
     expression.parent.kind !== "Identifier"
       ? expression.parent
       : expression.parent.value
   ) as ObjectValue | ArrayValue;
-
-  // if (mainObj.type === "array") {
-  //   let lastProp: ObjectValue | RuntimeValue | undefined = mainObj;
-
-  //     for (var i = 0; i < properties.length; i++) {
-  //       let prop = properties[i];
-
-  //       if (!lastProp || lastProp.type === "undef") {
-  //         throw Err(
-  //           "NameError",
-  //           `Cannot read properties of an undefined value, READING: ${
-  //             [expression.parent]
-  //               .concat(properties)
-  //               .slice(0, i + 2)
-  //               .map((i) => i.value)
-  //               .join(" → ".green).white
-  //           }`
-  //         );
-  //       }
-
-  //       if (lastProp.value && Array.isA) {
-  //         lastProp = lastProp.properties.get(prop.value) as ObjectValue;
-  //       } else if (lastProp.prototypes && lastProp.prototypes[prop.value]) {
-  //         lastProp = lastProp.prototypes[prop.value];
-  //       } else lastProp = MK.undefined();
-  //     }
-
-  //     return lastProp || MK.undefined();
-  // }
 
   if (mainObj.type !== "object" && mainObj.type !== "array") {
     let proty = mainObj as RuntimeValue;
