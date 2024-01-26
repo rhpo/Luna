@@ -293,7 +293,8 @@ let native: Functions = {
             let fn = args[0];
             let time = args[1];
 
-            if (!fn || fn.type !== "fn") return MK.undefined();
+            if (!fn || (fn.type !== "fn" && fn.type !== "native-fn"))
+              return MK.undefined();
             if (!time || time.type !== "number") return MK.undefined();
 
             let stopped = false;
@@ -311,6 +312,39 @@ let native: Functions = {
                   return MK.undefined();
                 },
                 "NATIVE → INTERVAL → STOP"
+              ),
+            });
+          },
+        },
+
+        {
+          name: "timeout",
+          nativeName: "System → IO → TIMEOUT",
+          knownas: "(fn, time) => setTimeout(fn, time)",
+
+          body: (args, scope): RuntimeValue => {
+            let fn = args[0];
+            let time = args[1];
+
+            if (!fn || (fn.type !== "fn" && fn.type !== "native-fn"))
+              return MK.undefined();
+            if (!time || time.type !== "number") return MK.undefined();
+
+            let stopped = false;
+
+            setTimeout(() => {
+              if (!stopped) {
+                evaluateFunctionCall(fn as NativeFNVal, [], scope);
+              }
+            }, time.value);
+
+            return MK.object({
+              stop: MK.nativeFunc(
+                (args: RuntimeValue[], scope: Environment) => {
+                  stopped = true;
+                  return MK.undefined();
+                },
+                "NATIVE → TIMEOUT → STOP"
               ),
             });
           },

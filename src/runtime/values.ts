@@ -603,6 +603,22 @@ const prototypelist: Record<string, PrototypeItem[]> = {
     },
 
     {
+      name: "int",
+      value(args) {
+        if (args[0].value) return MK.number(parseInt(args[0].value));
+        else return MK.nil();
+      },
+    },
+
+    {
+      name: "float",
+      value(args) {
+        if (args[0].value) return MK.number(parseFloat(args[0].value));
+        else return MK.nil();
+      },
+    },
+
+    {
       name: "replace",
       value(args) {
         if (args[0].value) {
@@ -631,6 +647,129 @@ const prototypelist: Record<string, PrototypeItem[]> = {
             throw Err("ArgumentError", "Argument A is not a type of string");
 
           return MK.array(string.split(a).map((s: any) => MK.string(s)));
+        } else return MK.nil();
+      },
+    },
+
+    {
+      name: "replace",
+      value(args) {
+        if (args[0].value) {
+          let string = args[0].value;
+          let a = args[1]?.value;
+          let b = args[2]?.value;
+
+          if (typeof a === "undefined")
+            throw Err("ArgumentError", "Argument A is not a type of string");
+          if (typeof b === "undefined")
+            throw Err("ArgumentError", "Argument B is not a type of string");
+
+          return MK.string(string.replaceAll(a, b));
+        } else return MK.nil();
+      },
+    },
+
+    {
+      name: "charAt",
+      value(args) {
+        if (args[0].value) {
+          let string = args[0].value;
+          let a = args[1]?.value;
+
+          if (typeof a === "undefined")
+            throw Err("ArgumentError", "Argument A is not a type of string");
+
+          return MK.string(string.charAt(a));
+        } else return MK.nil();
+      },
+    },
+
+    {
+      name: "charCodeAt",
+      value(args) {
+        if (args[0].value) {
+          let string = args[0].value;
+          let a = args[1]?.value;
+
+          if (typeof a === "undefined")
+            throw Err("ArgumentError", "Argument A is not a type of string");
+
+          return MK.number(string.charCodeAt(a));
+        } else return MK.nil();
+      },
+    },
+
+    {
+      name: "concat",
+      value(args) {
+        if (args[0].value) {
+          let string = args[0].value;
+          let a = args[1]?.value;
+
+          if (typeof a === "undefined")
+            throw Err("ArgumentError", "Argument A is not a type of string");
+
+          return MK.string(string.concat(a));
+        } else return MK.nil();
+      },
+    },
+
+    {
+      name: "includes",
+      value(args) {
+        if (args[0].value) {
+          let string = args[0].value;
+          let a = args[1]?.value;
+
+          if (typeof a === "undefined")
+            throw Err("ArgumentError", "Argument A is not a type of string");
+
+          return MK.bool(string.includes(a));
+        } else return MK.nil();
+      },
+    },
+
+    {
+      name: "indexOf",
+      value(args) {
+        if (args[0].value) {
+          let string = args[0].value;
+          let a = args[1]?.value;
+
+          if (typeof a === "undefined")
+            throw Err("ArgumentError", "Argument A is not a type of string");
+
+          return MK.number(string.indexOf(a));
+        } else return MK.nil();
+      },
+    },
+
+    {
+      name: "lastIndexOf",
+      value(args) {
+        if (args[0].value) {
+          let string = args[0].value;
+          let a = args[1]?.value;
+
+          if (typeof a === "undefined")
+            throw Err("ArgumentError", "Argument A is not a type of string");
+
+          return MK.number(string.lastIndexOf(a));
+        } else return MK.nil();
+      },
+    },
+
+    {
+      name: "match",
+      value(args) {
+        if (args[0].value) {
+          let string = args[0].value;
+          let a = args[1]?.value;
+
+          if (typeof a === "undefined")
+            throw Err("ArgumentError", "Argument A is not a type of string");
+
+          return MK.array(string.match(a).map((s: any) => MK.string(s)));
         } else return MK.nil();
       },
     },
