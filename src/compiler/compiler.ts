@@ -17,7 +17,7 @@ import {
   ReturnExpr,
   Statement,
   StringLiteral,
-  TypegetExpr,
+  TypeofExpr,
   UnaryExpr,
   WhileStatement,
 } from "../lib/ast";
@@ -204,8 +204,8 @@ export default class LunaTranspiler {
               : ""
           }}`;
 
-      case "TypegetExpr":
-        let t = ast as TypegetExpr;
+      case "TypeofExpr":
+        let t = ast as TypeofExpr;
         return `typeof ${this.reallyTranspile(t.value)}`;
 
       case "AssignmentExpr":

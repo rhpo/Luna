@@ -7,6 +7,7 @@ import unescapeJs from "unescape-js";
 export type ValueType =
   | "null"
   | "undef"
+  | "void"
   | "number"
   | "boolean"
   | "string"
@@ -65,6 +66,11 @@ export interface UndefinedValue extends RuntimeValue {
 export interface NumberValue extends RuntimeValue {
   type: "number";
   value: number;
+}
+
+export interface VoidValue extends RuntimeValue {
+  type: "void";
+  value: undefined;
 }
 
 export interface BooleanValue extends RuntimeValue {
@@ -144,6 +150,11 @@ export const MK = {
 
   number(n: number = 0): NumberValue {
     return { type: "number", value: n } as NumberValue;
+  },
+
+  // means nothing to show...
+  void(): VoidValue {
+    return { type: "void", value: undefined } as VoidValue;
   },
 
   string(s: string = ""): StringValue {

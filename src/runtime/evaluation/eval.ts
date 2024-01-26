@@ -17,6 +17,7 @@ import {
   Identifier,
   Import,
   InequalityExpr,
+  IsDefExpression,
   LogicalExpr,
   MemberExpr,
   MemberExprX,
@@ -28,7 +29,7 @@ import {
   StringLiteral,
   TapStatement,
   TernaryExpr,
-  TypegetExpr,
+  TypeofExpr,
   UnaryExpr,
   UseStatement,
   WhileStatement,
@@ -307,10 +308,27 @@ export function evaluateBinExpression(
   return MK.undefined();
 }
 
-export function evaluateTypeget(typeget: TypegetExpr, env: Environment) {
-  let value = evaluate(typeget.value, env);
+export function evaluateTypeof(type: TypeofExpr, env: Environment) {
+  let value = evaluate(type.value, env);
 
   return MK.string(value.type);
+}
+
+export function evaluateIsDef(variable: Expression, env: Environment) {
+  let result = MK.bool(true);
+
+  try {
+    if (variable.value.kind === "MemberExprX") {
+      result = MK.bool(evaluate(variable.value, env).type !== "undef");
+    } else if (variable.value.kind === "Identifier") {
+      result = MK.bool(env.lookupVar(variable.value).type !== "undef");
+    } else
+      throw Err("TypeError", `Cannot check if '${variable.value}' is defined`);
+  } catch {
+    result = MK.bool(false);
+  }
+
+  return result;
 }
 
 export function evaluateIdentifier(
@@ -606,6 +624,9 @@ export function stringify(expr: Expression): string {
         stringify(binExpr.right)
       );
 
+    case "IsDefExpression":
+      return "isdef " + stringify((expr as IsDefExpression).value);
+
     case "Identifier":
       return (expr as Identifier).value;
 
@@ -766,7 +787,8 @@ export function evaluateDebugStatement(
     } else console.warn(stringify(prop) + ":" + lastValue);
   });
 
-  return lastValue;
+  // return lastValue; This is confusing for people, so I'm removing it.
+  return MK.void();
 }
 
 export function evaluateCallExpr(
@@ -830,10 +852,11 @@ export function evaluateCallExpr(
         `'${caller.parent.value}${s !== "" ? "." + s : ""}' is not a function`
       );
     } else {
-      throw Err(
-        "RefError",
-        `'${expression.caller.value || fn.type}' is not a function`
-      );
+      let who =
+        typeof expression.caller.value !== "object"
+          ? expression.caller.value
+          : stringify(expression.caller);
+      throw Err("RefError", `'${who || fn.type}' is not a function`);
     }
   }
 }
@@ -986,6 +1009,13 @@ export function evaluateAssignment(
   // }
 
   // else
+
+  env.parent &&
+    env.parent.declareVar(
+      (assignment.assigne?.value as string) ||
+        (assignment.assigne as MemberExprX),
+      value
+    );
 
   return env.declareVar(
     (assignment.assigne?.value as string) ||

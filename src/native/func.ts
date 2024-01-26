@@ -264,6 +264,59 @@ let native: Functions = {
 
       collection: [
         {
+          name: "task",
+          nativeName: "System → IO → TASK",
+          knownas: "(fn) => async () => await fn()",
+
+          body: (args, scope): RuntimeValue => {
+            let fn = args[0];
+
+            if (!fn || fn.type !== "fn") return MK.undefined();
+
+            return MK.object({
+              run: MK.nativeFunc((args: RuntimeValue[], scope: Environment) => {
+                setTimeout(() => {
+                  evaluateFunctionCall(fn as NativeFNVal, args, scope);
+                }, 0);
+                return MK.undefined();
+              }, "NATIVE → TASK → RUN"),
+            });
+          },
+        },
+
+        {
+          name: "interval",
+          nativeName: "System → IO → INTERVAL",
+          knownas: "(fn, time) => setInterval(fn, time)",
+
+          body: (args, scope): RuntimeValue => {
+            let fn = args[0];
+            let time = args[1];
+
+            if (!fn || fn.type !== "fn") return MK.undefined();
+            if (!time || time.type !== "number") return MK.undefined();
+
+            let stopped = false;
+
+            setInterval(() => {
+              if (!stopped) {
+                evaluateFunctionCall(fn as NativeFNVal, [], scope);
+              }
+            }, time.value);
+
+            return MK.object({
+              stop: MK.nativeFunc(
+                (args: RuntimeValue[], scope: Environment) => {
+                  stopped = true;
+                  return MK.undefined();
+                },
+                "NATIVE → INTERVAL → STOP"
+              ),
+            });
+          },
+        },
+
+        {
           name: "print",
           knownas: "console.log",
           nativeName: "System → IO → PRINT",
@@ -271,7 +324,7 @@ let native: Functions = {
           body(args): RuntimeValue {
             console.log(args.map((arg) => colorize(arg, false, true)).join(""));
 
-            return MK.undefined();
+            return MK.void();
           },
         },
 
@@ -730,7 +783,6 @@ let native: Functions = {
               while (i < array.value.length) {
                 let v = array.value[i];
 
-                console.log(fn.declarationEnv);
                 evaluateFunctionCall(
                   fn,
                   [v, MK.number(i)],

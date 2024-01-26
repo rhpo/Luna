@@ -22,7 +22,8 @@ export type NodeType =
   | "NullLiteral"
   | "InequalityExpr"
   | "EqualityExpr"
-  | "TypegetExpr"
+  | "TypeofExpr"
+  | "IsDefExpression"
   | "ReturnExpr"
   | "LogicalExpr"
   | "NullishAssignmentExpr"
@@ -125,8 +126,13 @@ export interface TernaryExpr extends Expression {
   alternate: Expression;
 }
 
-export interface TypegetExpr extends Expression {
-  kind: "TypegetExpr";
+export interface TypeofExpr extends Expression {
+  kind: "TypeofExpr";
+  value: Expression;
+}
+
+export interface IsDefExpression extends Expression {
+  kind: "IsDefExpression";
   value: Expression;
 }
 

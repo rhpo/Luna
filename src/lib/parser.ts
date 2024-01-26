@@ -18,7 +18,8 @@ import {
   LogicalExpr,
   NullishAssignmentExpression,
   NumericalAssignmentExpression,
-  TypegetExpr,
+  TypeofExpr,
+  IsDefExpression,
   WhileStatement,
   UnaryExpr,
   ActionExpr,
@@ -36,9 +37,13 @@ import {
   ArrayLiteral,
 } from "./ast";
 import { Err } from "./error";
+import sys from "./sys";
 
-import PATH from "node:path";
-import fs from "node:fs";
+// import fs from "fs";
+var fs: any;
+if (!sys.script) {
+  fs = require("fs");
+}
 
 import systemDefaults from "./sys";
 
@@ -622,9 +627,12 @@ export default class Parser {
         kind: "AssignmentExpr",
       } as AssignmentExpr;
     } else if (this.at().type === TokenType.Colon) {
-      this.eat();
+      // Removed: because parseActionAssignementExpression() already parses the colon
+      // this.eat();
 
-      return this.parseActionAssignementExpression(left);
+      if (left.kind === "MemberExprX" || left.kind === "Identifier") {
+        return this.parseActionAssignementExpression(left);
+      } else return left;
     } else if (
       [TokenType.Increasement, TokenType.Decreasement].includes(
         this.at().type as TokenType
@@ -637,7 +645,11 @@ export default class Parser {
   }
 
   private parseActionAssignementExpression(left: Expression): Expression {
-    this.expect(TokenType.Identifier, TokenType.OUT);
+    // this.expect(TokenType.Identifier, TokenType.OUT);
+
+    this.expect(TokenType.Colon);
+    this.eat();
+
     const action = this.eat();
 
     let args = [];
@@ -745,7 +757,7 @@ export default class Parser {
         );
       }
 
-      let value = this.parsePrimaryExpression();
+      let value = this.parseUnaryExpression();
 
       if (this.at().type === TokenType.BinaryOperator) {
         const op2 = this.eat().value;
@@ -927,30 +939,47 @@ export default class Parser {
     let kw = this.eat(); // eat FN or LAMBDA
     let name: string;
 
-    if (kw.type === TokenType.FN) {
+    if (kw.type === TokenType.FN && this.at().type !== TokenType.Colon) {
       this.expect(TokenType.Identifier);
 
       name = this.at().value;
       this.eat(); // eat the name
     } else {
+      if (
+        this.at().type === TokenType.Colon &&
+        this.next() &&
+        this.next().type === TokenType.Colon &&
+        kw.type === TokenType.LAMBDA
+      )
+        throw Err(
+          "SyntaxError",
+          `Unexpected token ${strv(
+            this.at().type as TokenType
+          )},${this.where()}`
+        );
+      else if (this.at().type === TokenType.Colon) this.eat();
       name = "@ANONYMOUS";
     }
 
     const parameters = this.parseFNA();
 
-    this.expect(TokenType.OpenBrace);
-    this.eat();
+    this.expect(TokenType.OpenBrace, TokenType.Colon);
+    let separator = this.eat();
 
     const body: Statement[] = [];
 
-    while (this.notEOF() && this.at().type !== TokenType.CloseBrace) {
-      let state = this.parseStatement();
+    if (separator.type === TokenType.OpenBrace) {
+      while (this.notEOF() && this.at().type !== TokenType.CloseBrace) {
+        let state = this.parseStatement();
 
-      body.push(state);
+        body.push(state);
+      }
+
+      this.expect(TokenType.CloseBrace);
+      this.eat();
+    } else if (separator.type === TokenType.Colon) {
+      body.push(this.parseExpression());
     }
-
-    this.expect(TokenType.CloseBrace);
-    this.eat();
 
     const fn = {
       kind: "FunctionDeclaration",
@@ -968,7 +997,11 @@ export default class Parser {
   }
 
   private parseFNA(): AssignmentExpr[] {
-    if (this.at() && this.at().type === TokenType.OpenBrace) {
+    if (
+      this.at() &&
+      (this.at().type === TokenType.OpenBrace ||
+        this.at().type === TokenType.Colon)
+    ) {
       return [] as AssignmentExpr[];
     }
 
@@ -976,7 +1009,12 @@ export default class Parser {
 
     let args: AssignmentExpr[] = [];
 
-    while (this.notEOF() && this.at().type !== TokenType.OpenBrace) {
+    while (
+      this.notEOF() &&
+      ![TokenType.OpenBrace, TokenType.Colon].includes(
+        this.at().type as TokenType
+      )
+    ) {
       this.expect(TokenType.Identifier);
       let token = this.at();
 
@@ -1013,8 +1051,6 @@ export default class Parser {
         hasDefault: def,
       } as AssignmentExpr);
     }
-
-    this.expect(TokenType.OpenBrace);
 
     return args;
   }
@@ -1126,6 +1162,9 @@ export default class Parser {
   }
 
   private parseTapStatement(): TapStatement {
+    if (sys.script)
+      throw Err("SyntaxError", "Cannot use TAP statement in LunaScript");
+
     this.expect(TokenType.TAP);
     this.eat();
 
@@ -1209,25 +1248,43 @@ export default class Parser {
     let object = { kind: "IfStatement" } as IFStatement;
 
     let condition = this.parseExpression();
-
     object.test = condition;
 
-    if (!this.at() || this.at().type !== TokenType.OpenBrace) {
+    if (
+      !this.at() ||
+      (this.at().type !== TokenType.OpenBrace &&
+        this.at().type !== TokenType.Colon)
+    ) {
       throw Err(
         "SyntaxError",
-        `Expected '{' after 'if' condition${this.where()}`
+        `Expected '{ or :' after 'if' condition${this.where()}`
       );
     }
-    this.eat();
 
-    const body: Statement[] = [];
+    let splitter = this.eat();
 
-    while (this.notEOF() && this.at().type !== TokenType.CloseBrace) {
-      body.push(this.parseStatement());
+    let body: Statement[] = [];
+
+    switch (splitter.type) {
+      case TokenType.OpenBrace:
+        while (this.notEOF() && this.at().type !== TokenType.CloseBrace) {
+          body.push(this.parseStatement());
+        }
+
+        this.expect(TokenType.CloseBrace);
+        this.eat();
+        break;
+
+      case TokenType.Colon:
+        if (!this.notEOF()) {
+          throw Err(
+            "SyntaxError",
+            `Unexpected end of input, expecting '}'${this.where()} `
+          );
+        }
+        body.push(this.parseExpression());
+        break;
     }
-
-    this.expect(TokenType.CloseBrace);
-    this.eat();
 
     object.consequent = body;
 
@@ -1286,19 +1343,26 @@ export default class Parser {
     if (!this.at() || this.at().type !== TokenType.OpenBrace) {
       throw Err(
         "SyntaxError",
-        `Expected '{' after 'for' statement${this.where()}`
+        `Expected '{ or :' after 'for' statement${this.where()}`
       );
     }
-    this.eat();
 
     const body: Statement[] = [];
 
-    while (this.notEOF() && this.at().type !== TokenType.CloseBrace) {
-      body.push(this.parseStatement());
-    }
+    switch (this.eat().type) {
+      case TokenType.OpenBrace:
+        while (this.notEOF() && this.at().type !== TokenType.CloseBrace) {
+          body.push(this.parseStatement());
+        }
 
-    this.expect(TokenType.CloseBrace);
-    this.eat();
+        this.expect(TokenType.CloseBrace);
+        this.eat();
+        break;
+
+      case TokenType.Colon:
+        body.push(this.parseExpression());
+        break;
+    }
 
     object.body = body;
 
@@ -1335,19 +1399,26 @@ export default class Parser {
     if (!this.at() || this.at().type !== TokenType.OpenBrace) {
       throw Err(
         "SyntaxError",
-        `Expected '{' after 'if' condition${this.where()}`
+        `Expected '{ or :' after 'while' condition${this.where()}`
       );
     }
-    this.eat();
 
     const body: Statement[] = [];
 
-    while (this.notEOF() && this.at().type !== TokenType.CloseBrace) {
-      body.push(this.parseStatement());
-    }
+    switch (this.eat().type) {
+      case TokenType.OpenBrace:
+        while (this.notEOF() && this.at().type !== TokenType.CloseBrace) {
+          body.push(this.parseStatement());
+        }
 
-    this.expect(TokenType.CloseBrace);
-    this.eat();
+        this.expect(TokenType.CloseBrace);
+        this.eat();
+        break;
+
+      case TokenType.Colon:
+        body.push(this.parseExpression());
+        break;
+    }
 
     object.consequent = body;
 
@@ -1501,12 +1572,19 @@ export default class Parser {
         this.eat();
         return { kind: "EmptyStatement" } as EmptyStatement;
 
-      case TokenType.typeget:
+      case TokenType.TYPEOF:
         this.eat();
         return {
-          kind: "TypegetExpr",
+          kind: "TypeofExpr",
           value: this.parseExpression(),
-        } as TypegetExpr;
+        } as TypeofExpr;
+
+      case TokenType.ISDEF:
+        this.eat();
+        return {
+          kind: "IsDefExpression",
+          value: this.parsePrimaryExpression(),
+        } as IsDefExpression;
 
       case TokenType.RETURN:
         this.eat();
@@ -1573,6 +1651,6 @@ export default class Parser {
   }
 
   private notEOF(): boolean {
-    return this.tokens[0].type !== TokenType.EOF;
+    return this.tokens.length > 0 && this.tokens[0].type !== TokenType.EOF;
   }
 }

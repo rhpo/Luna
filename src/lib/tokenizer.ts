@@ -21,6 +21,8 @@ export enum TokenType {
   IF,
   ELSE,
   RETURN,
+  TYPEOF,
+  ISDEF,
   FOR,
   IN,
   TO,
@@ -118,7 +120,8 @@ export const KEYWORDS: Record<string, TokenType> = {
   embed: TokenType.EMBED,
   in: TokenType.IN,
   undef: TokenType.Undefined,
-  typeget: TokenType.typeget,
+  typeof: TokenType.TYPEOF,
+  isdef: TokenType.ISDEF,
 };
 
 Object.setPrototypeOf(KEYWORDS, null);

@@ -8,7 +8,6 @@ import { KEYWORDS } from "./lib/tokenizer";
 import { exec } from "pkg";
 
 import beautify from "js-beautify/js";
-
 import UPXSetup from "upx";
 
 let upx = UPXSetup({
@@ -68,7 +67,7 @@ let env = createContext([
     name: "print",
     value: MK.nativeFunc((args, scope) => {
       console.log(args.map((t) => t.value).join(" "));
-      return MK.undefined();
+      return MK.void();
     }, "PrintFunc"),
     override: true,
   },
@@ -148,7 +147,11 @@ async function cli() {
 
       let result = luna.evaluate(code);
 
-      console.log(colorize(result));
+      // ADD: Support for "void" values, which are not meant to be displayed.
+      // if result = void then return of colorize(result) should be null
+      // if null, console.log() should not be called
+      let output = colorize(result);
+      output && console.log(output);
 
       await cli();
     } catch (e: any) {

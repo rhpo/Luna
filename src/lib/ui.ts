@@ -96,6 +96,9 @@ export function colorize(
     case "undef":
       return "undef".gray;
 
+    case "void":
+      return null;
+
     case "NaN":
       return "NaN".cyan;
 
