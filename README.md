@@ -199,9 +199,8 @@ read("Luna Docs") # Reading Luna Docs...
 ```rust
 
 fn sum x=(1) y=(1) {
-  if x && y {
-    return x + y
-  }
+  if isdef x && isdef y: x + y
+  else null
 }
 
 print(sum(2, 4)) # 6
