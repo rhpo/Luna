@@ -996,19 +996,35 @@ export function evaluateAssignment(
 ) {
   let value = evaluate(assignment.value, env);
 
-  if (!["Identifier", "MemberExprX"].includes(assignment.assigne.kind)) {
+  if (
+    !["Identifier", "MemberExprX", "ObjectLiteral"].includes(
+      assignment.assigne.kind
+    )
+  ) {
     throw Err("SyntaxError", `Invalid left-hand assignment`);
   }
 
-  // if (assignment.assigne.kind === "MemberExprX") {
-  //   return env.declareObjectVar(
-  //     (assignment.assigne?.value as string) ||
-  //       (assignment.assigne as MemberExpr),
-  //     value
-  //   );
-  // }
+  // add object literal support
+  if (assignment.assigne.kind === "ObjectLiteral") {
+    if (value.type !== "object") {
+      throw Err("TypeError", `Cannot assign to a non-object value`);
+    }
 
-  // else
+    let obj = assignment.assigne as ObjectLiteral;
+
+    let values = obj.properties.map((prop) => {
+      if (prop.value.kind !== "Identifier") {
+        throw Err("SyntaxError", `Invalid right-hand assignment`);
+      } else return prop.value.value;
+    });
+
+    values.forEach((v) => {
+      env.declareVar(
+        v,
+        (value.properties?.get(v) as RuntimeValue) || MK.undefined()
+      );
+    });
+  }
 
   env.parent &&
     env.parent.declareVar(
@@ -1103,8 +1119,20 @@ export function evaluateNullishAssignment(
 ) {
   const value = evaluate(assignment.value, env);
 
-  if (!["Identifier", "MemberExpr"].includes(assignment.assigne.kind)) {
+  if (
+    !["Identifier", "MemberExpr", "ObjectLiteral"].includes(
+      assignment.assigne.kind
+    )
+  ) {
     throw Err("SyntaxError", `Invalid left-hand assignment`);
+  }
+
+  if (assignment.assigne.kind === "ObjectLiteral") {
+    const object = evaluateObjectExpression(
+      assignment.assigne as ObjectLiteral,
+      env
+    );
+    return object;
   }
 
   let original = env.lookupVar(assignment.assigne.value);
