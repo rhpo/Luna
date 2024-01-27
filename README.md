@@ -138,7 +138,7 @@ Luna's functioning follows a precise sequence: first, the written code undergoes
 
 **Luna** is 7.28x slower than **Python** (exactly 7.28060546875x)
 
-Relation between the runtime of Luna $(t_{l})$ and the runtime of Python $(t_{p})$ and the Luna-Python Time Scalar $(\Delta_{l,p})$
+Relation between the runtime of Luna $(t_{l})$ and the runtime of Python $(t_{p})$ and the Luna-Python Time Scalar $(\Delta_{l,p})$...
 
 Like so: $t_{p}(t_{l}) = \Delta _{l,p}t_{l}$
 
