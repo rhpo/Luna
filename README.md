@@ -144,7 +144,7 @@ Like so: $t_{p}(t_{l}) = \Delta_{l,p} * t_{l}$
 
 Luna has a max of recursive function call of $n = 2428 \pm \Delta R, \ \ \Delta R \in \mathbb{Z}, \ \ |\Delta R| \approx 1$
 
-**UPDATE** 🔥: Now when **Luna** gets **compiled**, it's **20x** **faster** than *Python*+!
+**UPDATE** 🔥: When **Compiled**, **Luna** gets **20x faster** than *Python* ⚡!
 
 <br>
 <br>
