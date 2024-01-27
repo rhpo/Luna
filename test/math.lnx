@@ -1,22 +1,9 @@
 
 
-<<<<<<< HEAD
-=======
-# Absolute Function: to calculate the absolute value of n
->>>>>>> e7a5b4fb5113cdd9cc5fa2d6af25221c329ae629
 out fn abs n {
   if n > 0 {n} else {-n}
 }
 
-<<<<<<< HEAD
 out fn approx a b epsilon=(0.0001) {
   return abs(a - b) < epsilon
 }
-=======
-# Approximately Equal function: returns equality of a and b at a certain precision (epsilon) => boolean
-out fn approx a b epsilon=(0.01) {
-  return abs(a - b) < epsilon
-}
-
-pi: out = math.pi
->>>>>>> e7a5b4fb5113cdd9cc5fa2d6af25221c329ae629
