@@ -93,38 +93,18 @@ export default class Environment {
       if (properties) {
         let lastone: RuntimeValue = mainObj as RuntimeValue;
 
-        let i = 0;
+        for (let i = 0; i < name.properties.length - 1; i++) {
+          let prop = name.properties[i].value;
 
-        name.properties.forEach((prop, idx) => {
-          // make a code that changes 'lastone' into the property 'prop', until reaching the last one...
-
-          if (lastone && lastone.type !== "undef") {
-            if (lastone.properties && lastone.properties.has(prop.value)) {
-              lastone = lastone.properties.get(prop.value) || MK.undefined();
-            } else if (
-              lastone.prototypes &&
-              lastone.prototypes[prop.value] !== undefined
-            ) {
-              lastone = lastone.prototypes[prop.value];
-            } else {
-              if (idx !== (name as MemberExprX).properties.length - 1) {
-                lastone = MK.undefined();
-              }
-            }
+          if (lastone.properties?.has(prop)) {
+            lastone = lastone.properties.get(prop) as RuntimeValue;
           } else {
-            throw Err(
-              "NameError",
-              `Cannot read properties of an undefined value, READING: ${
-                [(name as MemberExprX).parent]
-                  .concat((name as MemberExprX).properties)
-                  .slice(0, i + 2)
-                  .map((i) => i.value)
-                  .join(" → ".green).white
-              }`
-            );
+            let obj = MK.object({});
+
+            lastone.properties?.set(prop, obj);
+            lastone = obj;
           }
-          i++;
-        });
+        }
 
         lastone.properties?.set(
           name.properties[name.properties.length - 1].value,
