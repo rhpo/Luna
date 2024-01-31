@@ -59,6 +59,10 @@ function injectChar(string: string, char: string, pos: number) {
   return leftSide + char + rightSide;
 }
 
+interface TemporaryConfig {
+  skipColonAction?: boolean;
+}
+
 export default class Parser {
   private tokens: Token[] = [];
   private lines: string[];
@@ -66,7 +70,7 @@ export default class Parser {
   private backupTokens: Token[] = [];
   private tkIdx: number = 0;
   private permitEating: boolean;
-
+  private config: TemporaryConfig = {};
   private program: Program;
 
   constructor(tokens: Token[], code: string) {
@@ -227,9 +231,11 @@ export default class Parser {
 
       // Fixed: use "or" instead of "colon" (ternary operator)
 
+      // disable treating ternary's expression as action declaration
+      this.config.skipColonAction = true;
       let expr = this.parseExpression();
 
-      this.expect(TokenType.Colon, TokenType.OR);
+      this.expect(TokenType.Colon, TokenType.ELSE); // Addedd Else support in this statement
       this.eat();
 
       let alternate = this.parseExpression();
@@ -631,7 +637,10 @@ export default class Parser {
       // this.eat();
 
       if (left.kind === "MemberExprX" || left.kind === "Identifier") {
-        return this.parseActionAssignementExpression(left);
+        if (this.config.skipColonAction) {
+          this.config.skipColonAction = false;
+          return left;
+        } else return this.parseActionAssignementExpression(left);
       } else return left;
     } else if (
       [TokenType.Increasement, TokenType.Decreasement].includes(
@@ -1396,7 +1405,11 @@ export default class Parser {
 
     object.test = condition;
 
-    if (!this.at() || this.at().type !== TokenType.OpenBrace) {
+    if (
+      !this.at() ||
+      (this.at().type !== TokenType.OpenBrace &&
+        this.at().type !== TokenType.Colon)
+    ) {
       throw Err(
         "SyntaxError",
         `Expected '{ or :' after 'while' condition${this.where()}`
@@ -1576,7 +1589,7 @@ export default class Parser {
         this.eat();
         return {
           kind: "TypeofExpr",
-          value: this.parseExpression(),
+          value: this.parseMemberExpression(),
         } as TypeofExpr;
 
       case TokenType.ISDEF:
