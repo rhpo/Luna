@@ -942,7 +942,10 @@ let native: Functions = {
               nativeProp: string,
               isDirect: boolean = false
             ): RuntimeValue {
-              if (nativeProp.toLowerCase().startsWith("var:")) {
+              if (
+                typeof nativeProp === "string" &&
+                nativeProp.toLowerCase().startsWith("var:")
+              ) {
                 let variable = nativeProp.substring(4);
 
                 let stack = variable.split(".");
