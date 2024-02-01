@@ -1,6 +1,7 @@
 import Environment from "./lib/env";
 import Parser from "./lib/parser";
-import { Token, tokenize } from "./lib/tokenizer";
+
+import { tokenize } from "./lib/tokenizer";
 import { evalulateProgram } from "./runtime/evaluation/eval";
 import { RuntimeValue } from "./runtime/values";
 

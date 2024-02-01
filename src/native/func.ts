@@ -26,6 +26,16 @@ export type fnDec = {
   body: (args: RuntimeValue[], scope: Environment) => RuntimeValue;
 };
 
+export type MotherVar = {
+  // can either be module type, if so, it will have properties, else it will be a function
+  // with a value
+
+  name: string;
+  type: "function" | "module";
+  properties?: MotherVar[];
+  value?: () => RuntimeValue;
+};
+
 type Functions = {
   functions: fnDec[];
   nativelib: {
@@ -41,6 +51,8 @@ type Functions = {
   }[];
 
   variables: { name: string; value: RuntimeValue }[];
+
+  motherVariables: MotherVar[];
 };
 
 const sleep = (i: number) => {
@@ -930,6 +942,35 @@ let native: Functions = {
               nativeProp: string,
               isDirect: boolean = false
             ): RuntimeValue {
+              if (nativeProp.toLowerCase().startsWith("var:")) {
+                let variable = nativeProp.substring(4);
+
+                let stack = variable.split(".");
+
+                // see mother variables? we're going to check if the variable is a mother variable
+                // note: it's a tree, so we're going to check if the first variable is a mother variable
+                // then we're going to check if the second variable is a property of the first variable
+                // and so on
+
+                let motherVar = native.motherVariables.find(
+                  (a) => a.name === stack[0]
+                );
+
+                if (!motherVar) return MK.undefined();
+
+                let obj: any = motherVar;
+
+                for (let i = 1; i < stack.length; i++) {
+                  obj = obj.properties?.find(
+                    (a: MotherVar) => a.name === stack[i]
+                  );
+
+                  if (!obj) return MK.undefined();
+                }
+
+                return obj.value?.() || MK.undefined();
+              }
+
               let propNAT = isDirect
                 ? nativeProp
                 : globalThis[nativeProp as keyof typeof globalThis];
@@ -1053,6 +1094,42 @@ let native: Functions = {
   ],
 
   functions: [],
+
+  motherVariables: [
+    {
+      name: "IO",
+      type: "module",
+
+      properties: [
+        {
+          name: "console",
+          type: "module",
+          properties: [
+            {
+              name: "width",
+              type: "function",
+              value: () => {
+                return MK.number(
+                  // return the width of the console using process.stdout.columns
+                  process.stdout.columns
+                );
+              },
+            },
+            {
+              name: "height",
+              type: "function",
+              value: () => {
+                return MK.number(
+                  // return the height of the console using process.stdout.rows
+                  process.stdout.rows
+                );
+              },
+            },
+          ],
+        },
+      ],
+    },
+  ],
 
   variables: [
     {
