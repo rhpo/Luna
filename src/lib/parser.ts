@@ -1256,6 +1256,8 @@ export default class Parser {
 
     let object = { kind: "IfStatement" } as IFStatement;
 
+    this.config.skipColonAction = true;
+
     let condition = this.parseExpression();
     object.test = condition;
 
@@ -1345,11 +1347,13 @@ export default class Parser {
     this.expect(TokenType.Semicolon);
     this.eat();
 
+    this.config.skipColonAction = true;
+
     let increaseExpr = this.parseExpression();
 
     object.increaser = increaseExpr;
 
-    if (!this.at() || this.at().type !== TokenType.OpenBrace) {
+    if (!this.at() || (this.at().type !== TokenType.Colon && this.at().type !== TokenType.OpenBrace)) {
       throw Err(
         "SyntaxError",
         `Expected '{ or :' after 'for' statement${this.where()}`
@@ -1398,6 +1402,8 @@ export default class Parser {
   private parseWhileStatement() {
     this.expect(TokenType.WHILE);
     this.eat();
+
+    this.config.skipColonAction = true;
 
     let object = { kind: "WhileStatement" } as WhileStatement;
 
