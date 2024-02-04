@@ -61,6 +61,7 @@ function injectChar(string: string, char: string, pos: number) {
 
 interface TemporaryConfig {
   skipColonAction?: boolean;
+  skipColonStack: boolean[];
 }
 
 export default class Parser {
@@ -70,7 +71,10 @@ export default class Parser {
   private backupTokens: Token[] = [];
   private tkIdx: number = 0;
   private permitEating: boolean;
-  private config: TemporaryConfig = {};
+  private config: TemporaryConfig = {
+    skipColonAction: false,
+    skipColonStack: [],
+  };
   private program: Program;
 
   constructor(tokens: Token[], code: string) {
@@ -232,8 +236,9 @@ export default class Parser {
       // Fixed: use "or" instead of "colon" (ternary operator)
 
       // disable treating ternary's expression as action declaration
-      this.config.skipColonAction = true;
+      this.skipColon();
       let expr = this.parseExpression();
+      this.skipColonDone();
 
       this.expect(TokenType.Colon, TokenType.ELSE); // Addedd Else support in this statement
       this.eat();
@@ -637,8 +642,8 @@ export default class Parser {
       // this.eat();
 
       if (left.kind === "MemberExprX" || left.kind === "Identifier") {
-        if (this.config.skipColonAction) {
-          this.config.skipColonAction = false;
+        if (this.isSkipColon()) {
+          this.skipColonDone();
           return left;
         } else return this.parseActionAssignementExpression(left);
       } else return left;
@@ -1256,9 +1261,10 @@ export default class Parser {
 
     let object = { kind: "IfStatement" } as IFStatement;
 
-    this.config.skipColonAction = true;
-
+    this.skipColon();
     let condition = this.parseExpression();
+    this.skipColonDone();
+
     object.test = condition;
 
     if (
@@ -1347,13 +1353,17 @@ export default class Parser {
     this.expect(TokenType.Semicolon);
     this.eat();
 
-    this.config.skipColonAction = true;
-
+    this.skipColon();
     let increaseExpr = this.parseExpression();
+    this.skipColonDone();
 
     object.increaser = increaseExpr;
 
-    if (!this.at() || (this.at().type !== TokenType.Colon && this.at().type !== TokenType.OpenBrace)) {
+    if (
+      !this.at() ||
+      (this.at().type !== TokenType.Colon &&
+        this.at().type !== TokenType.OpenBrace)
+    ) {
       throw Err(
         "SyntaxError",
         `Expected '{ or :' after 'for' statement${this.where()}`
@@ -1403,11 +1413,11 @@ export default class Parser {
     this.expect(TokenType.WHILE);
     this.eat();
 
-    this.config.skipColonAction = true;
-
     let object = { kind: "WhileStatement" } as WhileStatement;
 
+    this.skipColon();
     let condition = this.parseExpression();
+    this.skipColonDone();
 
     object.test = condition;
 
@@ -1458,6 +1468,23 @@ export default class Parser {
 
     this.tkIdx++;
     return past;
+  }
+
+  private skipColon() {
+    this.config.skipColonStack.push(true);
+    return true;
+  }
+
+  private skipColonDone() {
+    if (this.config.skipColonStack.length > 0) {
+      this.config.skipColonStack.pop();
+    }
+
+    return true;
+  }
+
+  private isSkipColon() {
+    return this.config.skipColonStack.length > 0;
   }
 
   private expect(...TT: TokenType[]): Token {
