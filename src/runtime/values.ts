@@ -2,7 +2,15 @@ import { AssignmentExpr, ReactRequirements, Statement } from "../lib/ast";
 import Environment from "../lib/env";
 import { Err } from "../lib/error";
 import { evaluateFunctionCall, stringify } from "./evaluation/eval";
+
 import unescapeJs from "unescape-js";
+function unescapeSafe(s: string): string {
+  try {
+    return unescapeJs(s);
+  } catch (e) {
+    return s;
+  }
+}
 
 export type ValueType =
   | "null"
@@ -160,7 +168,7 @@ export const MK = {
   string(s: string = ""): StringValue {
     return {
       type: "string",
-      value: unescapeJs(s),
+      value: unescapeSafe(s),
       prototypes: prototypelist.string
         .map((k) => {
           if (typeof k.value === "function") {

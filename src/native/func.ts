@@ -11,6 +11,7 @@ import { Luna } from "../luna";
 import Environment from "../lib/env";
 import PromptSync from "prompt-sync";
 import { evaluateFunctionCall, stringify } from "../runtime/evaluation/eval";
+import { Err } from "../lib/error";
 
 let prompt = PromptSync();
 
@@ -59,6 +60,174 @@ const sleep = (i: number) => {
   var waitTill = new Date(new Date().getTime() + i);
   while (waitTill > new Date());
 };
+
+// decycle function to remove circular references
+// Credits to georg on stackoverflow
+// stackoverflow.com/a/9382383/14596124
+function decycle(obj: any, stack: any[] = []): typeof obj {
+  try {
+    if (!obj || typeof obj !== "object") return obj;
+
+    if (stack.includes(obj)) return null;
+
+    let s = stack.concat([obj]);
+
+    return Array.isArray(obj)
+      ? obj.map((x) => decycle(x, s))
+      : Object.fromEntries(
+          Object.entries(obj).map(([k, v]) => [k, decycle(v, s)])
+        );
+  } catch {
+    // TypeError: Cannot read properties of undefined (reading 'encrypted')
+    return obj;
+  }
+}
+
+export function convert(
+  nativeProp: string,
+  isDirect: boolean = false
+): RuntimeValue {
+  if (
+    typeof nativeProp === "string" &&
+    nativeProp.toLowerCase().startsWith("var:")
+  ) {
+    let variable = nativeProp.substring(4);
+
+    let stack = variable.split(".");
+
+    // see mother variables? we're going to check if the variable is a mother variable
+    // note: it's a tree, so we're going to check if the first variable is a mother variable
+    // then we're going to check if the second variable is a property of the first variable
+    // and so on
+
+    let motherVar = native.motherVariables.find((a) => a.name === stack[0]);
+
+    if (!motherVar) return MK.undefined();
+
+    let obj: any = motherVar;
+
+    for (let i = 1; i < stack.length; i++) {
+      obj = obj.properties?.find((a: MotherVar) => a.name === stack[i]);
+
+      if (!obj) return MK.undefined();
+    }
+
+    return obj.value?.() || MK.undefined();
+  }
+
+  let propNAT = isDirect
+    ? nativeProp
+    : globalThis[nativeProp as keyof typeof globalThis];
+
+  if (typeof nativeProp === "string" && nativeProp.includes(".")) {
+    let props = nativeProp.split(".");
+
+    let obj = globalThis[props[0] as keyof typeof globalThis];
+
+    if (!obj) return MK.undefined();
+
+    for (let i = 1; i < props.length; i++) {
+      obj = obj[props[i] as keyof typeof obj];
+
+      if (!obj) return MK.undefined();
+    }
+
+    return convert(obj, true);
+  }
+
+  isDirect = typeof nativeProp !== "string";
+
+  if (!isDirect && nativeProp.startsWith("pkg:")) {
+    try {
+      propNAT = require(nativeProp.replace("pkg:", ""));
+    } catch {}
+  }
+
+  switch (typeof propNAT) {
+    case "undefined":
+      return MK.undefined();
+    case "bigint":
+    case "number":
+      return MK.number(propNAT as number);
+    case "boolean":
+      return MK.bool(propNAT);
+    case "function":
+      let keys = Object.keys(propNAT);
+      let fn = MK.nativeFunc((args) => {
+        if (typeof propNAT === "function") {
+          let f = propNAT(...args.map((_) => _.value));
+
+          return convert(f, true);
+        } else return MK.undefined();
+      }, "NATIVE → " + (isDirect ? propNAT.name : nativeProp).toUpperCase());
+
+      if (keys.length === 0) return fn;
+      else {
+        keys.forEach((key) => {
+          let prop = propNAT[key];
+
+          fn.prototypes = fn.prototypes || {};
+
+          fn.prototypes[key] = convert(prop, true);
+        });
+
+        return fn;
+      }
+    case "string":
+      return MK.string(propNAT);
+    case "object":
+      let object = decycle(propNAT);
+      let target: {
+        [key: string]: RuntimeValue;
+      } = {};
+
+      if ([null, undefined].includes(propNAT)) return MK.nil();
+
+      if (Array.isArray(propNAT)) {
+        const obj = {};
+        for (let i = 0; i < propNAT.length; i++) {
+          object[i] = convert(propNAT[i], false);
+        }
+
+        return MK.object(obj);
+      }
+
+      let getKeys = function (obj: any) {
+        let keysArr = [];
+        for (var key in obj) {
+          keysArr.push(key);
+        }
+        return keysArr;
+      };
+
+      let alternateWay = function (obj: any) {
+        return Object.getOwnPropertyNames(obj);
+      };
+
+      let props = getKeys(object);
+
+      if (props.length === 0) {
+        props = alternateWay(object);
+      }
+
+      props.forEach((i) => {
+        let obj;
+
+        try {
+          obj = object[i];
+        } catch {
+          obj = Object.getOwnPropertyDescriptor(object, i)?.value;
+        }
+        target[i as keyof typeof target] = convert(obj, true);
+      });
+
+      return MK.object(target);
+
+    default:
+      console.log("Unknown Native Property".green);
+      return MK.NaN();
+  }
+}
 
 let native: Functions = {
   nativelib: [
@@ -265,6 +434,207 @@ let native: Functions = {
         {
           name: "pi",
           value: MK.number(Math.PI),
+        },
+      ],
+    },
+
+    {
+      nativename: "fs",
+      exportAs: "fs",
+      public: false,
+
+      collection: [
+        {
+          name: "file",
+          nativeName: "System → FS → FILE",
+          knownas: {
+            backend: `
+              function file(path) {
+                const fileS = require('fs');
+                return {
+                  read: () => fileS.readFileSync(path, 'utf-8'),
+                  update: (data) => fileS.writeFileSync(path, data),
+                  write: (data) => fileS.appendFileSync(path, data),
+                  delete: () => fileS.unlinkSync(path),
+                  exists: () => fileS.existsSync(path),
+                  move: (dest) => fileS.renameSync(path, dest),
+                  path: path
+                };
+              }
+            `,
+            web: "() => throw new Error('fs is not available in the browser')",
+          },
+
+          body: (args, scope): RuntimeValue => {
+            let path = args[0];
+
+            if (!path || path.type !== "string") return MK.undefined();
+
+            let fileS = require("fs");
+
+            return MK.object({
+              read: MK.nativeFunc((args, scope): RuntimeValue => {
+                try {
+                  return MK.string(fileS.readFileSync(path.value, "utf-8"));
+                } catch {
+                  throw Err(
+                    "FSError",
+                    "Failed to read file, permissions needed."
+                  );
+                }
+              }, "FS → FILE → READ"),
+
+              update: MK.nativeFunc((args, scope): RuntimeValue => {
+                try {
+                  fileS.writeFileSync(path.value, args[0].value);
+                  return MK.undefined();
+                } catch {
+                  throw Err(
+                    "FSError",
+                    "Failed to update file, permissions needed."
+                  );
+                }
+              }, "FS → FILE → UPDATE"),
+
+              write: MK.nativeFunc((args, scope): RuntimeValue => {
+                try {
+                  fileS.appendFileSync(path.value, args[0].value);
+                  return MK.undefined();
+                } catch {
+                  throw Err(
+                    "FSError",
+                    "Failed to write to file, permissions needed."
+                  );
+                }
+              }, "FS → FILE → WRITE"),
+
+              delete: MK.nativeFunc((args, scope): RuntimeValue => {
+                try {
+                  fileS.unlinkSync(path.value);
+                  return MK.undefined();
+                } catch {
+                  throw Err(
+                    "FSError",
+                    "Failed to delete file, permissions needed."
+                  );
+                }
+              }, "FS → FILE → DELETE"),
+
+              exists: MK.nativeFunc((args, scope): RuntimeValue => {
+                return MK.bool(fileS.existsSync(path.value));
+              }, "FS → FILE → EXISTS"),
+
+              move: MK.nativeFunc((args, scope): RuntimeValue => {
+                try {
+                  fileS.renameSync(args[0].value, args[1].value);
+                  return MK.undefined();
+                } catch {
+                  throw Err(
+                    "FSError",
+                    "Failed to move file, permissions needed."
+                  );
+                }
+              }, "FS → FILE → MOVE"),
+
+              path: MK.string(path.value),
+            });
+          },
+        },
+
+        {
+          name: "dir",
+          nativeName: "System → FS → DIR",
+          knownas: {
+            backend: `
+              function dir(path) {
+                const fileS = require('fs');
+                return {
+                  read: () => fileS.readdirSync(path),
+                  create: () => fileS.mkdirSync(path),
+                  delete: () => fileS.rmdirSync(path),
+                  exists: () => fileS.existsSync(path),
+                  isdir: () => fileS.lstatSync(path).isDirectory(),
+                  move: (dest) => fileS.renameSync(path, dest),
+
+                  path: path
+                };
+              }
+            `,
+            web: "() => throw new Error('fs is not available in the browser')",
+          },
+
+          body: (args, scope): RuntimeValue => {
+            let path = args[0];
+
+            if (!path || path.type !== "string") return MK.undefined();
+
+            let fileS = require("fs");
+
+            return MK.object({
+              read: MK.nativeFunc((args, scope): RuntimeValue => {
+                try {
+                  return MK.array(
+                    fileS.readdirSync(path.value).map((a: any) => MK.string(a))
+                  );
+                } catch {
+                  throw Err(
+                    "FSError",
+                    "Failed to read directory, permissions needed."
+                  );
+                }
+              }, "FS → DIR → READ"),
+
+              create: MK.nativeFunc((args, scope): RuntimeValue => {
+                try {
+                  fileS.mkdirSync(path.value);
+                  return MK.undefined();
+                } catch {
+                  throw Err(
+                    "FSError",
+                    "Failed to create directory, permissions needed."
+                  );
+                }
+              }, "FS → DIR → CREATE"),
+
+              delete: MK.nativeFunc((args, scope): RuntimeValue => {
+                try {
+                  fileS.rmdirSync(path.value);
+                  return MK.undefined();
+                } catch {
+                  throw Err(
+                    "FSError",
+                    "Failed to delete directory, permissions needed."
+                  );
+                }
+              }, "FS → DIR → DELETE"),
+
+              exists: MK.nativeFunc((args, scope): RuntimeValue => {
+                try {
+                  return MK.bool(fileS.existsSync(path.value));
+                } catch {
+                  throw Err(
+                    "FSError",
+                    "Failed to check if directory exists, permissions needed."
+                  );
+                }
+              }, "FS → DIR → EXISTS"),
+
+              move: MK.nativeFunc((args, scope): RuntimeValue => {
+                try {
+                  let dest = args[0];
+                  fileS.renameSync(path.value, dest.value);
+                  return MK.undefined();
+                } catch {
+                  throw Err(
+                    "FSError",
+                    "Failed to move directory to destination, permissions needed."
+                  );
+                }
+              }, "FS → DIR → MOVE"),
+
+              path: MK.string(path.value),
+            });
+          },
         },
       ],
     },
@@ -938,158 +1308,7 @@ let native: Functions = {
               return MK.nil();
             }
 
-            function parse(
-              nativeProp: string,
-              isDirect: boolean = false
-            ): RuntimeValue {
-              if (
-                typeof nativeProp === "string" &&
-                nativeProp.toLowerCase().startsWith("var:")
-              ) {
-                let variable = nativeProp.substring(4);
-
-                let stack = variable.split(".");
-
-                // see mother variables? we're going to check if the variable is a mother variable
-                // note: it's a tree, so we're going to check if the first variable is a mother variable
-                // then we're going to check if the second variable is a property of the first variable
-                // and so on
-
-                let motherVar = native.motherVariables.find(
-                  (a) => a.name === stack[0]
-                );
-
-                if (!motherVar) return MK.undefined();
-
-                let obj: any = motherVar;
-
-                for (let i = 1; i < stack.length; i++) {
-                  obj = obj.properties?.find(
-                    (a: MotherVar) => a.name === stack[i]
-                  );
-
-                  if (!obj) return MK.undefined();
-                }
-
-                return obj.value?.() || MK.undefined();
-              }
-
-              let propNAT = isDirect
-                ? nativeProp
-                : globalThis[nativeProp as keyof typeof globalThis];
-
-              if (typeof nativeProp === "string" && nativeProp.includes(".")) {
-                let props = nativeProp.split(".");
-
-                let obj = globalThis[props[0] as keyof typeof globalThis];
-
-                if (!obj) return MK.undefined();
-
-                for (let i = 1; i < props.length; i++) {
-                  obj = obj[props[i] as keyof typeof obj];
-
-                  if (!obj) return MK.undefined();
-                }
-
-                return parse(obj, true);
-              }
-
-              isDirect = typeof nativeProp !== "string";
-
-              if (!isDirect && nativeProp.startsWith("pkg:")) {
-                try {
-                  propNAT = require(nativeProp.replace("pkg:", ""));
-                } catch {}
-              }
-
-              switch (typeof propNAT) {
-                case "undefined":
-                  return MK.undefined();
-                case "bigint":
-                case "number":
-                  return MK.number(propNAT as number);
-                case "boolean":
-                  return MK.bool(propNAT);
-                case "function":
-                  let keys = Object.keys(propNAT);
-                  let fn = MK.nativeFunc((args) => {
-                    if (typeof propNAT === "function") {
-                      let f = propNAT(...args.map((_) => _.value));
-
-                      return parse(f, true);
-                    } else return MK.undefined();
-                  }, "NATIVE → " + (isDirect ? propNAT.name : nativeProp).toUpperCase());
-
-                  if (keys.length === 0) return fn;
-                  else {
-                    keys.forEach((key) => {
-                      let prop = propNAT[key];
-
-                      fn.prototypes = fn.prototypes || {};
-
-                      fn.prototypes[key] = parse(prop, true);
-                    });
-
-                    return fn;
-                  }
-                case "string":
-                  return MK.string(propNAT);
-                case "object":
-                  let object = propNAT;
-                  let target: {
-                    [key: string]: RuntimeValue;
-                  } = {};
-
-                  if ([null, undefined].includes(propNAT)) return MK.nil();
-
-                  if (Array.isArray(propNAT)) {
-                    const obj = {};
-                    for (let i = 0; i < propNAT.length; i++) {
-                      object[i] = parse(propNAT[i], false);
-                    }
-
-                    return MK.object(obj);
-                  }
-
-                  let getKeys = function (obj: any) {
-                    let keysArr = [];
-                    for (var key in obj) {
-                      keysArr.push(key);
-                    }
-                    return keysArr;
-                  };
-
-                  let alternateWay = function (obj: any) {
-                    return Object.getOwnPropertyNames(obj);
-                  };
-
-                  let props = getKeys(object);
-
-                  if (props.length === 0) {
-                    props = alternateWay(object);
-                  }
-
-                  props.forEach((i) => {
-                    let obj;
-
-                    try {
-                      obj = object[i];
-                    } catch {
-                      obj = Object.getOwnPropertyDescriptor(object, i)?.value;
-                    }
-
-                    target[i as keyof typeof target] = parse(obj, true);
-                  });
-
-                  return MK.object(target);
-
-                default:
-                  console.log("Unknown Native Property".green);
-                  return MK.NaN();
-              }
-            }
-
-            return parse(name?.value);
+            return convert(name?.value);
           },
         },
       ],

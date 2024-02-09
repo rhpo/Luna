@@ -8,11 +8,6 @@ import { KEYWORDS } from "./lib/tokenizer";
 import { exec } from "pkg";
 
 import beautify from "js-beautify/js";
-import UPXSetup from "upx";
-
-let upx = UPXSetup({
-  better: true,
-});
 
 process.argv = process.argv.filter((c) => {
   return !c.includes("snapshot");
@@ -66,7 +61,17 @@ let env = createContext([
   {
     name: "print",
     value: MK.nativeFunc((args, scope) => {
-      console.log(args.map((t) => t.value).join(" "));
+      console.log(
+        args
+          .map((t) => {
+            if (t.type === "string") {
+              return t.value;
+            } else {
+              return colorize(t, false, true);
+            }
+          })
+          .join(" ")
+      );
       return MK.void();
     }, "PrintFunc"),
     override: true,
