@@ -142,7 +142,7 @@ Relation between the runtime of Luna $(t_{l})$ and the runtime of Python $(t_{p}
 
 Like so: $t_{p}(t_{l}) = \Delta_{l,p} * t_{l}$
 
-Luna has a max of recursive function call of $n = 2428 \pm \Delta R, \ \ \Delta R \in \mathbb{Z}, \ \ |\Delta R| \approx 1$
+Luna has a max of recursive function call of $n = 2428 \pm \Delta R, \ \ \Delta R \in \mathbb{Z}, \ \ |\Delta R| \approx 50$
 
 **UPDATE** 🔥: When **Compiled**, **Luna** gets **20x faster** than *Python* ⚡!
 
