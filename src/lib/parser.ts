@@ -589,12 +589,23 @@ export default class Parser {
       // obj.expr
 
       if (operator.type === TokenType.Dot) {
+        function convertIdentifierToStringLiteral(
+          identifier: Identifier
+        ): StringLiteral {
+          return {
+            kind: "StringLiteral",
+            value: identifier.value,
+          } as StringLiteral;
+        }
+
         this.eat();
-        let c = this.parsePrimaryExpression();
+        let c = convertIdentifierToStringLiteral(
+          this.parsePrimaryExpression() as Identifier
+        );
         properties.push(c);
         // this.eat();
 
-        if (!["MemberExpr", "Identifier"].includes(c.kind)) {
+        if (!["MemberExpr", "Identifier", "StringLiteral"].includes(c.kind)) {
           throw Err(
             "SyntaxError",
             `Unexpected token '${
@@ -606,6 +617,7 @@ export default class Parser {
         this.expect(TokenType.OpenBracket);
         this.eat();
         this.expect(TokenType.String, TokenType.Identifier, TokenType.Int);
+
         properties.push(this.parseExpression());
 
         this.expect(TokenType.CloseBracket);

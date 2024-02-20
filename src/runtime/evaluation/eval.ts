@@ -1213,7 +1213,7 @@ export function evaluateMemberExprX(
     Object.setPrototypeOf(lastProp.value, null);
 
     for (var i = 0; i < expression.properties.length; i++) {
-      let prop = expression.properties[i];
+      let prop = evaluate(expression.properties[i], env);
 
       if (!lastProp || lastProp.type === "undef") {
         throw Err(
