@@ -85,6 +85,8 @@ export default class Environment {
     if ((name as MemberExprX).kind === "MemberExprX") {
       name = name as MemberExprX;
 
+      // assigne...
+
       let env = this.resolve(name.parent.value);
       let mainObj = env.lookupVar(name.parent.value) as ObjectValue;
 
@@ -94,7 +96,10 @@ export default class Environment {
         let lastone: RuntimeValue = mainObj as RuntimeValue;
 
         for (let i = 0; i < name.properties.length - 1; i++) {
-          let prop = name.properties[i].value;
+          // BUG; it doesn't support evaluating expressions...
+          // let prop = name.properties[i].value;
+
+          let prop = evaluate(name.properties[i], env).value as string;
 
           if (lastone.properties?.has(prop)) {
             lastone = lastone.properties.get(prop) as RuntimeValue;
