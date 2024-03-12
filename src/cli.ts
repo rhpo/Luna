@@ -19,6 +19,7 @@ import PATH from "node:path";
 import systemDefaults from "./lib/sys";
 import LunaTranspiler from "../transpiler/transpiler";
 import { Err } from "./lib/error";
+import { evaluateFunctionCall } from "./runtime/evaluation/eval";
 
 let code: string;
 let history: string[] = [];
@@ -57,6 +58,9 @@ const checkBrackets = (expression: string) => {
   return stack.length;
 };
 
+process.stdin.setRawMode(true);
+let onKeypressQueue: any[] = [];
+
 let env = createContext([
   {
     name: "print",
@@ -74,6 +78,15 @@ let env = createContext([
       );
       return MK.void();
     }, "PrintFunc"),
+    override: true,
+  },
+
+  {
+    name: "onkeypress",
+    value: MK.nativeFunc((args, scope) => {
+      onKeypressQueue.push(args[0]);
+      return MK.void();
+    }, "OnKeyPress"),
     override: true,
   },
 
@@ -118,6 +131,10 @@ function exit() {
 }
 
 terminal.on("key", (name: any) => {
+  onKeypressQueue.forEach((cb) => {
+    evaluateFunctionCall(cb, [MK.string(name)], env);
+  });
+
   if (["CTRL_C", "ESCAPE"].includes(name)) exit();
 });
 
@@ -169,7 +186,7 @@ async function cli() {
   }
 }
 
-let welcome = `Welcome to the Luna REPL!`.green;
+let welcome = `Welcome to the ${systemDefaults.name} REPL!`.green;
 
 async function main(argums: string[]) {
   const args = argums.slice(argums[0].includes("node") ? 2 : 1);

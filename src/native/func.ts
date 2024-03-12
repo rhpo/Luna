@@ -65,6 +65,20 @@ const sleep = (i: number) => {
 // Credits to georg on stackoverflow
 // stackoverflow.com/a/9382383/14596124
 function decycle(obj: any, stack: any[] = []): typeof obj {
+  // first we check if it's really circular
+  // if it is not then return it directly
+
+  function isCircular(obj: any) {
+    try {
+      JSON.stringify(obj);
+    } catch (e) {
+      return true;
+    }
+    return false;
+  }
+
+  if (!isCircular(obj)) return obj;
+
   try {
     if (!obj || typeof obj !== "object") return obj;
 
@@ -176,7 +190,8 @@ export function convert(
     case "string":
       return MK.string(propNAT);
     case "object":
-      let object = decycle(propNAT);
+      let object = decycle(propNAT); // remove circular references, but it removes Math object entirely... !
+
       let target: {
         [key: string]: RuntimeValue;
       } = {};
@@ -777,6 +792,32 @@ let native: Functions = {
             }
           },
         },
+
+        // ,{
+        //   name: "onkeypress",
+        //   nativeName: "System → IO → ON_KEY_PRESS",
+        //   knownas: {
+        //     backend: "process.stdin.on('keypress', (str, key) => fn(str, key))",
+        //     web: "window.onkeypress = fn",
+        //   },
+
+        //   body: (args, scope): RuntimeValue => {
+        //     let fn = args[0];
+
+        //     if (!fn || (fn.type !== "fn" && fn.type !== "native-fn"))
+        //       return MK.undefined();
+
+        //     process.stdin.on("keypress", (str, key) => {
+        //       evaluateFunctionCall(
+        //         fn as NativeFNVal,
+        //         [MK.string(str), MK.object(key)],
+        //         scope
+        //       );
+        //     });
+
+        //     return MK.void();
+        //   },
+        // },
       ],
     },
 
