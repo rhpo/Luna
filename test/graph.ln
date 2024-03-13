@@ -1,0 +1,39 @@
+
+use 'plot' as plot
+
+{plot} = plot
+
+f = eval(
+  "fn f x: " +
+    input('Expression? ')
+)
+
+# plot.animateScale(f, 10)
+
+scale = {
+  x: 0.1,
+  y: 1
+}
+
+keypress(fn: key {
+
+  {name} = key
+
+  dx = 0.01
+  dy = 0.1
+
+  if name == "right": scale.x = scale.x + dx
+  else if name == "left": scale.x = scale.x - dx
+
+  if name == "up": scale.y = scale.y + dy
+  else if name == "down": scale.y = scale.y - dy
+
+  plot(f, scale)
+
+})
+
+t = task(fn: {
+    plot(f, scale)
+})
+
+alive(t.run())
