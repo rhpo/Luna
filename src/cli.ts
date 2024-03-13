@@ -3,11 +3,11 @@
 import { terminal } from "terminal-kit";
 import { colorize } from "./lib/ui";
 import { Luna, createContext } from "./luna";
-import { MK } from "./runtime/values";
+import { FNVal, MK } from "./runtime/values";
 import { KEYWORDS } from "./lib/tokenizer";
 import { exec } from "pkg";
-
 import beautify from "js-beautify/js";
+import keypress from "keypress";
 
 process.argv = process.argv.filter((c) => {
   return !c.includes("snapshot");
@@ -58,6 +58,9 @@ const checkBrackets = (expression: string) => {
   return stack.length;
 };
 
+keypress(process.stdin);
+
+process.stdin.resume();
 process.stdin.setRawMode(true);
 let onKeypressQueue: any[] = [];
 
@@ -82,7 +85,7 @@ let env = createContext([
   },
 
   {
-    name: "onkeypress",
+    name: "keypress",
     value: MK.nativeFunc((args, scope) => {
       onKeypressQueue.push(args[0]);
       return MK.void();
@@ -130,60 +133,90 @@ function exit() {
   process.exit(0);
 }
 
-terminal.on("key", (name: any) => {
-  onKeypressQueue.forEach((cb) => {
-    evaluateFunctionCall(cb, [MK.string(name)], env);
-  });
+// terminal.on("key", async (name: any) => {
+//  onKeypressQueue.forEach((cb) => {
+//   evaluateFunctionCall(cb, [MK.string(name)], env);
+//});
+//
+//  if (["CTRL_C", "ESCAPE"].includes(name)) exit();
+//});
 
-  if (["CTRL_C", "ESCAPE"].includes(name)) exit();
+process.stdin.on("keypress", function (ch, key) {
+  key &&
+    onKeypressQueue.forEach((cb: FNVal) => {
+      evaluateFunctionCall(
+        cb,
+        [
+          MK.object({
+            name: MK.string(key.name),
+            ctrl: MK.bool(key.ctrl),
+            shift: MK.bool(key.shift),
+            meta: MK.bool(key.meta),
+            sequence: MK.string(key.sequence),
+            code: MK.string(key.code),
+            raw: MK.string(key.raw),
+            full: MK.string(key.full),
+          }),
+        ],
+        cb.declarationEnv
+      );
+    });
+
+  if (key && ((key.ctrl && key.name === "c") || key.name === "escape")) {
+    exit();
+  }
 });
 
-async function cli() {
-  let code = "";
+function cli() {
+  setTimeout(async () => {
+    let code = "";
 
-  async function getCode(prompt = ">> ") {
-    let str = await ask(prompt);
+    async function getCode(prompt = ">> ") {
+      let str = await ask(prompt);
 
-    let check = checkBrackets(code + str);
+      let check = checkBrackets(code + str);
 
-    if (Number.isNaN(check)) {
-      console.log(Err("SyntaxError", "Unmatched bracket in REPL-Only"));
+      if (Number.isNaN(check)) {
+        console.log(Err("SyntaxError", "Unmatched bracket in REPL-Only"));
 
-      await cli();
-    } else if (check === 0) {
-      code += code !== "" ? " " + str : str;
-    } else {
-      code += code !== "" ? " " + str : str;
+        await cli();
+      } else if (check === 0) {
+        code += code !== "" ? " " + str : str;
+      } else {
+        code += code !== "" ? " " + str : str;
 
-      await getCode("  ".repeat(check) + "... ".gray);
+        await getCode("  ".repeat(check) + "... ".gray);
+      }
     }
-  }
 
-  await getCode();
+    getCode().then(async () => {
+      if (code.trim() !== "") {
+        history.push(code);
 
-  if (code.trim() !== "") {
-    history.push(code);
+        try {
+          let luna = new Luna(env);
 
-    try {
-      let luna = new Luna(env);
+          setImmediate(async () => {
+            let result = luna.evaluate(code);
+            let output = colorize(result);
+            output && console.log(output);
 
-      let result = luna.evaluate(code);
+            await cli();
+          });
 
-      // ADD: Support for "void" values, which are not meant to be displayed.
-      // if result = void then return of colorize(result) should be null
-      // if null, console.log() should not be called
-      let output = colorize(result);
-      output && console.log(output);
+          // ADD: Support for "void" values, which are not meant to be displayed.
+          // if result = void then return of colorize(result) should be null
+          // if null, console.log() should not be called
+        } catch (e: any) {
+          console.log(e.stack || e);
 
-      await cli();
-    } catch (e: any) {
-      console.log(e.stack || e);
-
-      await cli();
-    }
-  } else {
-    await cli();
-  }
+          await cli();
+        }
+      } else {
+        await cli();
+      }
+    });
+  }, 0);
 }
 
 let welcome = `Welcome to the ${systemDefaults.name} REPL!`.green;

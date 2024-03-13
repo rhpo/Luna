@@ -1,0 +1,59 @@
+
+use "luna:console" as console
+
+out fn plot f scale=({
+    x: 0.1,
+    y: 1
+}) {
+
+  { width, height } = console.size()
+
+  origin = {
+      x: math.int(width / 2),
+      y: math.int(height / 2)
+  }
+
+  console.clear()
+
+  margin = 1
+
+  # WARNING: all tasks must be done in one loop, otherwise the screen will be cleared and the axis will be lost
+  range(height - margin).each(fn :y {
+      range(width).each(fn :x {
+
+          X = x - origin.x
+          Fx = math.int(f(X * scale.x) * scale.y)
+
+          #debug {origin.x, x, origin.y, y}
+          if (x == origin.x) || (y == origin.y):
+              puts("*")
+          else if Fx == origin.y - y:
+              puts("#")
+          else
+              puts(" ")
+      })
+      print()
+  })
+
+}
+
+out fn animateScale f del=(10) {
+    scale = { x: 0.1, y: 1 }
+    max = 10
+    step = 0.01
+
+    
+    range(2 * max).each(fn :i {
+        if i == max:
+          step *= -1
+
+        plot(f, scale)
+        scale.x = scale.x - step
+        scale.y = scale.y - step
+        sleep(del)
+    })
+}
+
+# f = eval("use 'luna:math' as math lambda x: " + input("Enter a function: "))
+# animateScale(f, 0)
+

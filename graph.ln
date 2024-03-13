@@ -1,0 +1,35 @@
+
+use 'plot' as plot
+
+{plot} = plot
+
+f = eval(
+  "fn f x: " +
+    #input('Expression? ')
+    "x**2"
+)
+
+# plot.animateScale(f, 10)
+
+scale = {
+  x: 0.1,
+  y: 1
+}
+
+keypress(fn: key {
+
+  if key == "RIGHT": scale.x = scale.x + 0.1
+  else if key == "LEFT": scale.x = scale.x - 0.1
+
+  plot(f, scale)
+
+})
+
+t = task(fn: {
+    plot(f, scale)
+})
+
+interval(
+  t.run,
+  2000
+)

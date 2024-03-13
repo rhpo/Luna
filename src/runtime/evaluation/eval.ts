@@ -875,7 +875,8 @@ export function evaluateFunctionCall(
 
   let f = fn as FNVal;
 
-  const fnScope = env || f.declarationEnv;
+  const fnScope =
+    typeof f.declarationEnv !== "undefined" ? env : f.declarationEnv;
 
   if (f.parameters.length > args.length && sys.dev) {
     throw Err(
@@ -1377,11 +1378,15 @@ export function evaluateFunctionDeclaration(
     body: declaration.body,
   };
 
-  let c = env.declareVar(
-    fn.name,
-    MK.func(fn.name, fn.parameters, fn.body, fn.export, env),
-    true
-  );
+  let func = MK.func(fn.name, fn.parameters, fn.body, fn.export, env);
+
+  // func.declarationEnv !== undefined...
+
+  let c = env.declareVar(fn.name, func, true);
+
+  let t = env.lookupVar(fn.name);
+
+  // t.declarationEnv == undefined...
 
   return c;
 }

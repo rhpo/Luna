@@ -1,11 +1,14 @@
 {
   "dependencies": {
+    "@types/keypress": "^2.0.30",
     "@types/prompt-sync": "^4.2.0",
     "colors": "^1.4.0",
     "js-beautify": "^1.14.11",
+    "keypress": "^0.2.1",
     "pkg": "^5.8.1",
     "rcedit": "^3.1.0",
     "robotjs": "^0.6.0",
+    "run-async": "^3.0.0",
     "terminal-kit": "^3.0.0",
     "unescape-js": "^1.1.4",
     "upx": "^1.0.6"

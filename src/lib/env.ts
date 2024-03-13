@@ -194,7 +194,7 @@ export default class Environment {
 
         (value as RuntimeValue).reactiveCallbacks =
           (value as RuntimeValue).reactiveCallbacks || [];
-        (value as FNVal).declarationEnv = this.parent as Environment;
+        (value as FNVal).declarationEnv = this;
 
         this.variables.set(name, value as RuntimeValue);
       }
