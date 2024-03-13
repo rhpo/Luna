@@ -715,6 +715,16 @@ let native: Functions = {
         },
 
         {
+          name: "alive",
+          nativeName: "System → IO → ALIVE",
+          knownas: "() => setInterval(() => {}, 1000 * 60 * 60 * 24)", // 24 hours
+          body: (args, scope): RuntimeValue => {
+            setInterval(() => {}, 1000 * 60 * 60 * 24);
+            return MK.undefined();
+          },
+        },
+
+        {
           name: "timeout",
           nativeName: "System → IO → TIMEOUT",
           knownas: "(fn, time) => setTimeout(fn, time)",

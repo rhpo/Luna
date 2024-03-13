@@ -29,7 +29,9 @@ t = task(fn: {
     plot(f, scale)
 })
 
+t.run()
+
 interval(
   t.run,
-  2000
+  100000
 )
