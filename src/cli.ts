@@ -328,6 +328,14 @@ async function main(argums: string[]) {
         override: true,
       },
 
+      {
+        name: "moveCursor",
+        value: MK.nativeFunc((args, scope) => {
+          terminal.moveTo(args[0].value, args[1].value);
+          return MK.void();
+        }, "MoveCursor"),
+      },
+
       ...Array.from(exports, ([name, value]) => ({
         name,
         value,
