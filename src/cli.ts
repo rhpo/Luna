@@ -231,6 +231,13 @@ async function main(argums: string[]) {
       `Base Directory ${basedir} doesn't exist. Please run \`luna doctor\``
     );
   } else {
+    let defaultConfig = "";
+    if (!fs.existsSync(PATH.join(basedir, "config.lnx")))
+      fs.writeFileSync(PATH.join(basedir, "config.lnx"), defaultConfig);
+
+    if (!fs.existsSync(PATH.join(basedir, "history.json")))
+      fs.writeFileSync(PATH.join(basedir, "history.json"), "[]");
+
     if (args[0] == "core") {
       console.log(`Opening '${basedir}'...`);
       return openFile(basedir, (error: any) => {
@@ -264,13 +271,6 @@ async function main(argums: string[]) {
       });
     }
 
-    let defaultConfig = "";
-    if (!fs.existsSync(PATH.join(basedir, "config.lnx")))
-      fs.writeFileSync(PATH.join(basedir, "config.lnx"), defaultConfig);
-
-    if (!fs.existsSync(PATH.join(basedir, "history.json")))
-      fs.writeFileSync(PATH.join(basedir, "history.json"), "[]");
-
     // Removed the Duplicates for easier use...
     history = [
       ...new Set(
@@ -281,11 +281,12 @@ async function main(argums: string[]) {
     ];
 
     // add config.lnx to env
+    let myEnv = new Environment();
     let exports = resolveExports(
-      new Luna(new Environment()).produceAST(
+      new Luna(myEnv).produceAST(
         fs.readFileSync(PATH.join(basedir, "/config.lnx")).toString()
       ),
-      new Environment(),
+      myEnv,
       basedir
     );
 
@@ -333,6 +334,8 @@ async function main(argums: string[]) {
         override: true,
       })),
     ]);
+
+    env.parent = myEnv;
 
     if (args.length === 0) {
       console.log(welcome);
