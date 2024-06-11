@@ -251,7 +251,4 @@ export function evaluate(astNode: Statement, env: Environment): RuntimeValue {
         `This Node of kind '${astNode.kind}' has a type that is not yet supported by the ${systemDefaults.name} interpreter`
       );
   }
-  // } catch (e) {
-  //   console.log(e);
-  // }
 }

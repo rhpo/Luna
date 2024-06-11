@@ -13,27 +13,35 @@ out fn plot f scale=({
       y: math.int(height / 2)
   }
 
-  console.clear()
 
   margin = 1
 
-  # WARNING: all tasks must be done in one loop, otherwise the screen will be cleared and the axis will be lost
-  range(height - margin).each(fn :y {
-      range(width).each(fn :x {
-
+  # Method 2: make 2d array of screen [width, height], render it then print it to the console
+  screen = range(height - margin).map(fn :y {
+      range(width).map(fn :x {
           X = x - origin.x
           Fx = math.int(f(X * scale.x) * scale.y)
 
-          #debug {origin.x, x, origin.y, y}
           if (x == origin.x) || (y == origin.y):
-              puts("*")
+              "*"
           else if Fx == origin.y - y:
-              puts("#")
+              "#"
           else
-              puts(" ")
+              " "
       })
-      print()
   })
+
+  console.clear()
+
+  fn render screen {
+      print(
+            screen.map(fn :row {
+                row.join("")
+            }).join("\n")
+      )
+  }
+
+  render(screen)
 
 }
 
@@ -42,7 +50,7 @@ out fn animateScale f del=(10) {
     max = 10
     step = 0.01
 
-    
+
     range(2 * max).each(fn :i {
         if i == max:
           step *= -1

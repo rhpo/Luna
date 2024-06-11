@@ -2,7 +2,13 @@ import { fnDec } from "../native/func";
 import { evaluateFunctionCall } from "../runtime/evaluation/eval";
 import { evaluate } from "../runtime/interpreter";
 import { FNVal, MK, ObjectValue, PROTO, RuntimeValue } from "../runtime/values";
-import { MemberExpr, MemberExprX, ReactRequirements, Statement } from "./ast";
+import {
+  ArrayLiteral,
+  MemberExpr,
+  MemberExprX,
+  ReactRequirements,
+  Statement,
+} from "./ast";
 import { Err } from "./error";
 import systemDefaults from "./sys";
 
@@ -90,31 +96,44 @@ export default class Environment {
       let env = this.resolve(name.parent.value);
       let mainObj = env.lookupVar(name.parent.value) as ObjectValue;
 
-      let properties = mainObj.properties;
+      if (mainObj.type === "object") {
+        let properties = mainObj.properties;
 
-      if (properties) {
-        let lastone: RuntimeValue = mainObj as RuntimeValue;
+        if (properties) {
+          let lastone: RuntimeValue = mainObj as RuntimeValue;
 
-        for (let i = 0; i < name.properties.length - 1; i++) {
-          // BUG; it doesn't support evaluating expressions...
-          // let prop = name.properties[i].value;
+          for (let i = 0; i < name.properties.length - 1; i++) {
+            // BUG; it doesn't support evaluating expressions...
+            // let prop = name.properties[i].value;
 
-          let prop = evaluate(name.properties[i], env).value as string;
+            let prop = evaluate(name.properties[i], env).value as string;
 
-          if (lastone.properties?.has(prop)) {
-            lastone = lastone.properties.get(prop) as RuntimeValue;
-          } else {
-            let obj = MK.object({});
+            if (lastone.properties?.has(prop)) {
+              lastone = lastone.properties.get(prop) as RuntimeValue;
+            } else {
+              let obj = MK.object({});
 
-            lastone.properties?.set(prop, obj);
-            lastone = obj;
+              lastone.properties?.set(prop, obj);
+              lastone = obj;
+            }
           }
+
+          lastone.properties?.set(
+            name.properties[name.properties.length - 1].value,
+            value
+          );
+        }
+        //(mainObj.type === "array")
+      } else {
+        let array: RuntimeValue[] = mainObj.value;
+
+        if (name.properties.length === 1) {
+          array[name.properties[0].value as any] = value;
+        } else {
+          // don't know how to handle this yet...
         }
 
-        lastone.properties?.set(
-          name.properties[name.properties.length - 1].value,
-          value
-        );
+        mainObj.value = array;
       }
     } else {
       let alreadyDefined = this.variables.has(name as string);

@@ -6,6 +6,7 @@
     "js-beautify": "^1.14.11",
     "keypress": "^0.2.1",
     "pkg": "^5.8.1",
+    "prompt-sync": "^4.2.0",
     "rcedit": "^3.1.0",
     "robotjs": "^0.6.0",
     "run-async": "^3.0.0",

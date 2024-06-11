@@ -468,9 +468,11 @@ const prototypelist: Record<string, PrototypeItem[]> = {
         args = args.map(reassignproto);
         let func = args[1] as any as FNVal;
 
-        return args[0].value.find((e: RuntimeValue) => {
-          return evaluateFunctionCall(func, [e], scope).value;
-        });
+        return (
+          args[0].value.find((e: RuntimeValue) => {
+            return evaluateFunctionCall(func, [e], scope).value;
+          }) || MK.nil()
+        );
       },
     },
 

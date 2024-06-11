@@ -3,11 +3,12 @@
 import { terminal } from "terminal-kit";
 import { colorize } from "./lib/ui";
 import { Luna, createContext } from "./luna";
-import { FNVal, MK } from "./runtime/values";
+import { FNVal, MK, RuntimeValue } from "./runtime/values";
 import { KEYWORDS } from "./lib/tokenizer";
 import { exec } from "pkg";
 import beautify from "js-beautify/js";
 import keypress from "keypress";
+import os from "os";
 
 process.argv = process.argv.filter((c) => {
   return !c.includes("snapshot");
@@ -19,7 +20,11 @@ import PATH from "node:path";
 import systemDefaults from "./lib/sys";
 import LunaTranspiler from "../transpiler/transpiler";
 import { Err } from "./lib/error";
-import { evaluateFunctionCall } from "./runtime/evaluation/eval";
+import {
+  evaluateFunctionCall,
+  resolveExports,
+} from "./runtime/evaluation/eval";
+import Environment from "./lib/env";
 
 let code: string;
 let history: string[] = [];
@@ -44,10 +49,8 @@ const checkBrackets = (expression: string) => {
 
     if (!inStr)
       if (Object.keys(bracketLookup).includes(key)) {
-        // matches open brackets
         stack.push(key);
       } else if (Object.values(bracketLookup).includes(key)) {
-        //matches closed brackets
         const lastBracket = stack.pop();
         if (bracketLookup[lastBracket as keyof typeof bracketLookup] !== key) {
           return NaN;
@@ -58,52 +61,16 @@ const checkBrackets = (expression: string) => {
   return stack.length;
 };
 
-keypress(process.stdin);
-
-process.stdin.resume();
-process.stdin.setRawMode(true);
 let onKeypressQueue: any[] = [];
 
-let env = createContext([
-  {
-    name: "print",
-    value: MK.nativeFunc((args, scope) => {
-      console.log(
-        args
-          .map((t) => {
-            if (t.type === "string") {
-              return t.value;
-            } else {
-              return colorize(t, false, true);
-            }
-          })
-          .join(" ")
-      );
-      return MK.void();
-    }, "PrintFunc"),
-    override: true,
-  },
+// let path = path/to/user/Docuemts/luna-core/
+let basedir = PATH.join(
+  os.homedir(),
+  `Documents/${systemDefaults.name.toLowerCase()}-core`,
+  `/v${systemDefaults.version}`
+);
 
-  {
-    name: "keypress",
-    value: MK.nativeFunc((args, scope) => {
-      onKeypressQueue.push(args[0]);
-      return MK.void();
-    }, "OnKeyPress"),
-    override: true,
-  },
-
-  {
-    name: "repl",
-    value: MK.object({
-      exit: MK.nativeFunc(() => {
-        process.exit.call(0);
-        return MK.undefined();
-      }, "EXIT"),
-    }),
-    override: true,
-  },
-]);
+let env = createContext([]);
 
 async function ask(prompt: string, complete?: Array<string>): Promise<string> {
   return new Promise((resolve) => {
@@ -128,220 +95,316 @@ async function ask(prompt: string, complete?: Array<string>): Promise<string> {
   });
 }
 
+let beforeExit: RuntimeValue;
 function exit() {
-  console.log("\nExiting...".gray + "\n");
+  if (beforeExit && beforeExit.type == "fn")
+    evaluateFunctionCall(beforeExit as FNVal, [], env);
+
+  try {
+    fs.writeFileSync(
+      PATH.join(basedir, "/history.json"),
+      JSON.stringify(history)
+    );
+  } catch {}
+
+  console.log("\nExiting...".gray);
   process.exit(0);
 }
 
-// terminal.on("key", async (name: any) => {
-//  onKeypressQueue.forEach((cb) => {
-//   evaluateFunctionCall(cb, [MK.string(name)], env);
-//});
-//
-//  if (["CTRL_C", "ESCAPE"].includes(name)) exit();
-//});
+let doneSetupAlready = false;
+function setupKey() {
+  if (!doneSetupAlready) {
+    doneSetupAlready = true;
+    keypress(process.stdin);
+    process.stdin.resume();
+    process.stdin.setRawMode(true);
 
-process.stdin.on("keypress", function (ch, key) {
-  key &&
-    onKeypressQueue.forEach((cb: FNVal) => {
-      evaluateFunctionCall(
-        cb,
-        [
-          MK.object({
-            name: MK.string(key.name),
-            ctrl: MK.bool(key.ctrl),
-            shift: MK.bool(key.shift),
-            meta: MK.bool(key.meta),
-            sequence: MK.string(key.sequence),
-            code: MK.string(key.code),
-            raw: MK.string(key.raw),
-            full: MK.string(key.full),
-          }),
-        ],
-        cb.declarationEnv
-      );
+    process.stdin.on("keypress", function (ch, key) {
+      if (key && key.ctrl && ["c", "d"].includes(key.name)) exit();
+
+      key &&
+        onKeypressQueue.forEach((cb: FNVal) => {
+          evaluateFunctionCall(
+            cb,
+            [
+              MK.object({
+                name: MK.string(key.name),
+                ctrl: MK.bool(key.ctrl),
+                shift: MK.bool(key.shift),
+                meta: MK.bool(key.meta),
+                sequence: MK.string(key.sequence),
+                code: MK.string(key.code),
+                raw: MK.string(key.raw),
+                full: MK.string(key.full),
+              }),
+            ],
+            cb.declarationEnv
+          );
+        });
     });
-
-  if (key && ((key.ctrl && key.name === "c") || key.name === "escape")) {
-    exit();
   }
-});
-
-function cli() {
-  setTimeout(async () => {
-    let code = "";
-
-    async function getCode(prompt = ">> ") {
-      let str = await ask(prompt);
-
-      let check = checkBrackets(code + str);
-
-      if (Number.isNaN(check)) {
-        console.log(Err("SyntaxError", "Unmatched bracket in REPL-Only"));
-
-        await cli();
-      } else if (check === 0) {
-        code += code !== "" ? " " + str : str;
-      } else {
-        code += code !== "" ? " " + str : str;
-
-        await getCode("  ".repeat(check) + "... ".gray);
-      }
-    }
-
-    getCode().then(async () => {
-      if (code.trim() !== "") {
-        history.push(code);
-
-        try {
-          let luna = new Luna(env);
-
-          setImmediate(async () => {
-            let result = luna.evaluate(code);
-            let output = colorize(result);
-            output && console.log(output);
-
-            await cli();
-          });
-
-          // ADD: Support for "void" values, which are not meant to be displayed.
-          // if result = void then return of colorize(result) should be null
-          // if null, console.log() should not be called
-        } catch (e: any) {
-          console.log(e.stack || e);
-
-          await cli();
-        }
-      } else {
-        await cli();
-      }
-    });
-  }, 0);
 }
 
-let welcome = `Welcome to the ${systemDefaults.name} REPL!`.green;
+async function cli() {
+  setupKey();
+
+  let code = "";
+
+  async function getCode(prompt = ">> ") {
+    let str = await ask(prompt);
+
+    let check = checkBrackets(code + str);
+
+    if (Number.isNaN(check)) {
+      console.log(Err("SyntaxError", "Unmatched bracket in REPL-Only"));
+
+      await cli();
+    } else if (check === 0) {
+      code += code !== "" ? " " + str : str;
+    } else {
+      code += code !== "" ? " " + str : str;
+
+      await getCode("  ".repeat(check) + "... ".gray);
+    }
+  }
+
+  await getCode();
+  if (code.trim() !== "") {
+    history.push(code);
+
+    try {
+      let luna = new Luna(env);
+
+      let result = luna.evaluate(code);
+      let output = colorize(result);
+      output && console.log(output);
+
+      code = "";
+      await cli();
+    } catch (e: any) {
+      console.log(e.stack || e);
+      code = "";
+      await cli();
+    }
+  } else {
+    await cli();
+  }
+}
+
+let welcome =
+  `Welcome to the ${systemDefaults.name} REPL!`.green +
+  `\nType ${"exit()".underline.green.dim} ${"to leave...".gray}`.gray;
 
 async function main(argums: string[]) {
   const args = argums.slice(argums[0].includes("node") ? 2 : 1);
+  // let switches = args.filter((x) => x.startsWith("-"));
 
-  let switches = args.filter((x) => x.startsWith("-"));
+  let first = args[0];
 
-  const has = (flag: string) => {
-    return (
-      switches.includes(flag) || switches.includes(`-${flag.substring(1)}`)
+  if (args[0] == "doctor") {
+    if (!fs.existsSync(basedir)) {
+      let pathBuilder = os.homedir();
+
+      function build(name: string) {
+        pathBuilder = PATH.join(pathBuilder, name);
+        if (!fs.existsSync(pathBuilder)) {
+          fs.mkdirSync(pathBuilder);
+          console.log(`Making ${pathBuilder}`);
+        }
+        console.log(`Already Available: ${pathBuilder}`);
+      }
+
+      build("Documents");
+      build(`${systemDefaults.name.toLowerCase()}-core`);
+      build(`v${systemDefaults.version}`);
+      build("modules");
+      // TODO: Download all modules from the web...
+      console.log(
+        "Coming soon: Download all modules to '/modules' directory..."
+      );
+      return console.log("Everything Fixed ✅");
+    } else return console.log("Everything fine ✅");
+  } else if (!fs.existsSync(basedir)) {
+    console.error(
+      `Base Directory ${basedir} doesn't exist. Please run \`luna doctor\``
     );
-  };
-
-  if (args.length === 0) {
-    console.log(welcome);
-    await cli();
   } else {
-    let first = args[0];
+    let defaultConfig = "";
+    if (!fs.existsSync(PATH.join(basedir, "config.lnx")))
+      fs.writeFileSync(PATH.join(basedir, "config.lnx"), defaultConfig);
 
-    let file = args[1];
-    switch (first) {
-      case "repl":
-        console.log(welcome);
-        await cli();
-        break;
+    if (!fs.existsSync(PATH.join(basedir, "history.json")))
+      fs.writeFileSync(PATH.join(basedir, "history.json"), "[]");
 
-      case "compile":
-        // transpile then generate exe
-        if (!file) {
-          console.log("Please provide a file to compile");
-          break;
-        }
-        if (fs.existsSync(file)) {
-          try {
-            let code = fs.readFileSync(file, "utf8").toString();
-            let luna = new LunaTranspiler(code);
-            let motherCode = await luna.translate(false);
+    // Removed the Duplicates for easier use...
+    history = [
+      ...new Set(
+        JSON.parse(
+          fs.readFileSync(PATH.join(basedir, "history.json")).toString()
+        ) as Array<string>
+      ),
+    ];
 
-            // change extension to .js
-            let pathDetails = PATH.parse(file);
-            let fileName = pathDetails.base;
+    // add config.lnx to env
+    let exports = resolveExports(
+      new Luna(new Environment()).produceAST(
+        fs.readFileSync(PATH.join(basedir, "/config.lnx")).toString()
+      ),
+      new Environment(),
+      basedir
+    );
 
-            let filenew =
-              fileName.replaceAll(".ln", "").replaceAll(".lib", ".js") + ".js";
-            let newFilePath = PATH.join(pathDetails.dir, filenew);
+    //  CAN USE THIS TO CONFIGURE KEYS
+    //  LIKE COMPILER BEHAVIOUR OR DEFAULT
+    //  STRINGS OR VALUES
+    let config = exports.get("config");
+    exports.delete("config");
 
+    if (config?.properties?.has("before_exit"))
+      beforeExit = config?.properties?.get("before_exit") as FNVal;
+
+    env = createContext([
+      {
+        name: "print",
+        value: MK.nativeFunc((args, scope) => {
+          console.log(
+            args
+              .map((t) => {
+                if (t.type === "string") {
+                  return t.value;
+                } else {
+                  return colorize(t, false, true);
+                }
+              })
+              .join(" ")
+          );
+          return MK.void();
+        }, "PrintFunc"),
+        override: true,
+      },
+
+      {
+        name: "keypress",
+        value: MK.nativeFunc((args, scope) => {
+          onKeypressQueue.push(args[0]);
+          return MK.void();
+        }, "OnKeyPress"),
+        override: true,
+      },
+
+      ...Array.from(exports, ([name, value]) => ({
+        name,
+        value,
+        override: true,
+      })),
+    ]);
+
+    if (args.length === 0) {
+      console.log(welcome);
+      await cli();
+    } else {
+      let file = args[1];
+      switch (first) {
+        case "compile":
+          // transpile then generate exe
+          if (!file) {
+            console.log("Please provide a file to compile");
+            break;
+          }
+          if (fs.existsSync(file)) {
             try {
-              motherCode = beautify.js(motherCode, { indent_size: 3 });
-            } catch {}
+              let code = fs.readFileSync(file, "utf8").toString();
+              let luna = new LunaTranspiler(code);
+              let motherCode = await luna.translate(false);
 
-            fs.writeFileSync(newFilePath, motherCode, "utf8");
+              // change extension to .js
+              let pathDetails = PATH.parse(file);
+              let fileName = pathDetails.base;
 
-            console.log(
-              "New MotherLang (.JS) file created at: ".green + newFilePath
-            );
-          } catch (e: any) {
-            console.log(e.stack || e);
+              let filenew =
+                fileName.replaceAll(".ln", "").replaceAll(".lib", ".js") +
+                ".js";
+              let newFilePath = PATH.join(pathDetails.dir, filenew);
+
+              try {
+                motherCode = beautify.js(motherCode, { indent_size: 3 });
+              } catch {}
+
+              fs.writeFileSync(newFilePath, motherCode, "utf8");
+
+              console.log(
+                "New MotherLang (.JS) file created at: ".green + newFilePath
+              );
+            } catch (e: any) {
+              return console.log(e.stack || e);
+            }
           }
-        }
-        break;
-
-      case "build":
-        // we pack the code as string, and we pack the entire luna code with it so it can be evaluated
-
-        if (!file) {
-          console.log("Please provide a file to build");
           break;
-        }
-        if (fs.existsSync(file)) {
-          try {
-            let code = fs.readFileSync(file, "utf8").toString();
-            let luna = new LunaTranspiler(code, true);
-            let motherCode = await luna.translate(true);
 
+        case "build":
+          // we pack the code as string, and we pack the entire luna code with it so it can be evaluated
+
+          if (!file) {
+            console.log("Please provide a file to build");
+            break;
+          }
+          if (fs.existsSync(file)) {
             try {
-              motherCode = beautify.js(motherCode, { indent_size: 3 });
-            } catch {}
+              let code = fs.readFileSync(file, "utf8").toString();
+              let luna = new LunaTranspiler(code, true);
+              let motherCode = await luna.translate(true);
 
-            let pathDetails = PATH.parse(file);
-            let fileName = pathDetails.base;
+              try {
+                motherCode = beautify.js(motherCode, { indent_size: 3 });
+              } catch {}
 
-            let filenew =
-              fileName.replaceAll(".ln", "").replaceAll(".lnx", ".lib") + ".js";
-            let newFilePath = PATH.join(pathDetails.dir, filenew);
+              let pathDetails = PATH.parse(file);
+              let fileName = pathDetails.base;
 
-            console.log(motherCode);
+              let filenew =
+                fileName.replaceAll(".ln", "").replaceAll(".lnx", ".lib") +
+                ".js";
+              let newFilePath = PATH.join(pathDetails.dir, filenew);
 
-            fs.writeFileSync(newFilePath, motherCode, "utf8");
+              console.log(motherCode);
 
-            let finalPath = PATH.join(pathDetails.dir, filenew);
-            await exec([
-              finalPath,
-              "--target",
-              "host",
-              "--output",
-              PATH.join(pathDetails.dir, filenew.replaceAll(".js", ".exe")),
-            ]);
+              fs.writeFileSync(newFilePath, motherCode, "utf8");
 
-            fs.unlinkSync(newFilePath);
+              let finalPath = PATH.join(pathDetails.dir, filenew);
+              await exec([
+                finalPath,
+                "--target",
+                "host",
+                "--output",
+                PATH.join(pathDetails.dir, filenew.replaceAll(".js", ".exe")),
+              ]);
 
-            console.log(
-              "App built at: ".green + finalPath.replaceAll(".js", ".exe")
-            );
-          } catch (e: any) {
-            console.log(e.stack || e);
+              fs.unlinkSync(newFilePath);
+
+              console.log(
+                "App built at: ".green + finalPath.replaceAll(".js", ".exe")
+              );
+            } catch (e: any) {
+              console.log(e.stack || e);
+            }
           }
-        }
 
-      default:
-        let runner = first;
-        runner = PATH.resolve(runner); // to make it absolute
-        if (fs.existsSync(runner)) {
-          try {
-            let code = fs.readFileSync(runner, "utf8").toString();
-            let luna = new Luna(env);
-            luna.evaluate(code, env);
-          } catch (e: any) {
-            console.log(e.stack || e);
+        default:
+          let runner = first;
+          runner = PATH.resolve(runner); // to make it absolute
+          if (fs.existsSync(runner)) {
+            try {
+              let code = fs.readFileSync(runner, "utf8").toString();
+              let luna = new Luna(env);
+              luna.evaluate(code, env);
+            } catch (e: any) {
+              console.log(e.stack || e);
+            }
+          } else {
+            console.log("File not found!".red);
           }
-        } else {
-          console.log("File not found!".red);
-        }
-        break;
+          break;
+      }
     }
   }
 }

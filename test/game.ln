@@ -1,0 +1,130 @@
+
+use "luna:console" as console
+use "luna:colors" as colors
+
+{ width, height } = console.size()
+
+margin = 1
+screen = range(height - margin).map(
+    lambda y: range(width).map(
+        lambda x: " "
+    )
+)
+
+players = []
+count = 0
+player = fn: position char {
+    class = {
+        position: position,
+        char: char,
+        index: count++,
+        move: fn: direction {
+            { x, y } = class.position
+
+            # BUGGGGG !!!
+            # WORKS: if direction == "up": y = y - 1
+            # DOESNT WORK: if direction == "up": y = y - 1
+
+            # BUGGGGG !!!
+            # DOESNT WORK ON ALL CONDITIONS: if ... else if ... else if ... else if ...
+            # WORKS: if ... if ... if ... if ...
+
+            if direction == "down": y = y + 1
+            if direction == "up": y = y - 1
+            if direction == "left": x = x - 1
+            if direction == "right": x = x + 1
+
+            class.position = {x, y}
+            class.update()
+
+        },
+
+        switch: fn: newChar {
+            class.char = newChar
+            class.update()
+        },
+
+        update: fn: {
+            players[class.index] = class
+        }
+    }
+
+    players.push(class)
+    class
+}
+
+fn display play {
+    puts(play.char)
+}
+
+player1 = player({x: 3, y: 1}, "😭")
+
+# didn't show
+# player2 = player({x: 3, y: 1}, "💩")
+
+interval(fn: {
+    if player1.char == "😭": player1.switch("😂")
+    else player1.switch("😭")
+}, 1000)
+
+keypress(fn: key {
+    {name} = key
+
+    if name == "z": player1.move("up")
+    else if name == "s": player1.move("down")
+    else if name == "q": player1.move("left")
+    else if name == "d": player1.move("right")
+
+    render()
+})
+
+fn show screen {
+
+    console.clear()
+
+    #for i = 0; i < height - margin; i++ {
+    #    for j = 0; j < width; j++ {
+    #
+    #        if i == player1.position.y && j == player1.position.x:
+    #            display(player1)
+    #        else puts(screen[i][j])
+    #    }
+    #}
+
+    players.each(fn: player {
+
+
+      # DOESNT WORK: ASSIGNMENT OF 2 PROPS SAME TIME:
+      # screen[player.position.x][player.position.y] = player.char
+      #
+      newline = range(width).map(lambda i {
+        if i == player.position.x: player.char else " "
+      })
+
+      # DOESNT GET ASSIGNEEEEDDDDDDDDDDDDDDDDDDDDD !!!!! WHYYY??
+      screen[player.position.y] = newline
+
+    })
+
+    screen.each(fn: col {
+      print(
+        col.map(lambda x {
+            if typeof x != "string": x.char else x
+          }).join('')
+      )
+    })
+}
+
+fn render {
+    show(screen)
+}
+
+fn main {
+
+    player1.move('down')
+
+    render()
+}
+
+interval(main, 1000)
+

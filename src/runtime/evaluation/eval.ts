@@ -391,6 +391,28 @@ export function evaluateString(
   return MK.string(replaceNestedVariables(arg0.value));
 }
 
+export function resolveExports(
+  program: Program,
+  env: Environment,
+  origin: string
+): Map<string, RuntimeValue> {
+  let collector = new Environment(env);
+  evalulateProgram(program, collector, origin);
+
+  return new Map(
+    [...collector.variables.entries()].filter(([_key, value]) => {
+      if (
+        value.type === "fn" ||
+        value.type === "native-fn" ||
+        value.type === "function"
+      ) {
+        (value as FNVal).declarationEnv = collector;
+      }
+      return value.export;
+    })
+  );
+}
+
 export function evaluateUseStatement(
   statement: UseStatement,
   env: Environment
@@ -955,7 +977,7 @@ export function evaluateForStatement(
 
   let result: RuntimeValue = MK.undefined();
 
-  evaluate(expression.declaration, forEnv);
+  evaluate(expression.declaration, env);
 
   while (evaluate(expression.test, forEnv).value) {
     for (var s of expression.body) {
@@ -965,9 +987,8 @@ export function evaluateForStatement(
         result.value.returned = true;
         return result;
       }
-
-      evaluate(expression.increaser, forEnv);
     }
+    evaluate(expression.increaser, forEnv);
   }
 
   return result;
@@ -985,6 +1006,7 @@ export function evaluateWhileStatement(
     for (var s of expression.consequent) {
       evaluate(s, env);
     }
+
     condition = evaluate(expression.test, env).value;
   }
 
@@ -995,6 +1017,8 @@ export function evaluateAssignment(
   assignment: AssignmentExpr,
   env: Environment
 ) {
+  // console.log(assignment);
+
   let value = evaluate(assignment.value, env);
 
   if (
@@ -1005,7 +1029,7 @@ export function evaluateAssignment(
     throw Err("SyntaxError", `Invalid left-hand assignment`);
   }
 
-  // add object literal support
+  // add object literal support for extraction...
   if (assignment.assigne.kind === "ObjectLiteral") {
     if (value.type !== "object") {
       throw Err("TypeError", `Cannot assign to a non-object value`);
@@ -1034,6 +1058,7 @@ export function evaluateAssignment(
       value
     );
 
+  // declareVar as the memberexprX
   return env.declareVar(
     (assignment.assigne?.value as string) ||
       (assignment.assigne as MemberExprX),

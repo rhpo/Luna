@@ -3,10 +3,7 @@ use 'plot' as plot
 
 {plot} = plot
 
-f = eval(
-  "fn f x: " +
-    input('Expression? ')
-)
+f = eval("math = mother.import('Math') fn f x: {input('Expression? ')}")
 
 # plot.animateScale(f, 10)
 
@@ -14,6 +11,9 @@ scale = {
   x: 0.1,
   y: 1
 }
+
+delay = 100
+work = timeout(fn::plot(f, scale), delay)
 
 keypress(fn: key {
 
@@ -28,7 +28,9 @@ keypress(fn: key {
   if name == "up": scale.y = scale.y + dy
   else if name == "down": scale.y = scale.y - dy
 
-  plot(f, scale)
+  work.stop()
+
+  work = timeout(fn::plot(f, scale), delay)
 
 })
 
