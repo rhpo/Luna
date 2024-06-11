@@ -896,23 +896,6 @@ let native: Functions = {
       public: true,
 
       collection: [
-        // disabled it because it causes unexpected behavior
-        // with the CLI, as the CLI does stuff before normal exit,
-        // but this exits immediately...
-        // NOTE: "exit" now is a function in the CLI's provided context (Env)
-
-        // {
-        //   name: "exit",
-        //   knownas: {
-        //     backend: "process.exit",
-        //     web: "() => try { window.close() } catch {}",
-        //   },
-        //   nativeName: "System → Process → EXIT",
-        //   body: (args, scope): RuntimeValue => {
-        //     process.exit(0);
-        //   },
-        // },
-
         {
           name: "argv",
           knownas: {

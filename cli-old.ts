@@ -24,9 +24,9 @@ let history: string[] = [];
 const checkBrackets = (expression: string) => {
   const stack = [];
   const bracketLookup = {
-    '{': '}',
-    '(': ')',
-    '[': ']',
+    "{": "}",
+    "(": ")",
+    "[": "]",
     // '"': '"',
     // "'": "'"
   };
@@ -36,23 +36,24 @@ const checkBrackets = (expression: string) => {
   for (const key of expression) {
     if (key === '"' && inStr === '"') inStr = false;
     else if (key === "'" && inStr === "'") inStr = false;
-
     else if (key === "'" && !inStr) inStr = "'";
     else if (key === '"' && !inStr) inStr = '"';
 
-    if (!inStr) 
-      if (Object.keys(bracketLookup).includes(key)) { // matches open brackets
+    if (!inStr)
+      if (Object.keys(bracketLookup).includes(key)) {
+        // matches open brackets
         stack.push(key);
-      } else if (Object.values(bracketLookup).includes(key)) { //matches closed brackets
+      } else if (Object.values(bracketLookup).includes(key)) {
+        //matches closed brackets
         const lastBracket = stack.pop();
         if (bracketLookup[lastBracket as keyof typeof bracketLookup] !== key) {
           return NaN;
         }
       }
-    }
+  }
 
   return stack.length;
-}
+};
 
 let env = createContext([
   {
@@ -81,7 +82,11 @@ async function ask(prompt: string, complete?: Array<string>): Promise<string> {
     terminal(prompt);
     terminal.inputField(
       {
-        autoComplete: [...Object.keys(KEYWORDS), ...env.variables.keys(), ...(complete || [])].map((x) => x + " "),
+        autoComplete: [
+          ...Object.keys(KEYWORDS),
+          ...env.variables.keys(),
+          ...(complete || []),
+        ].map((x) => x + " "),
         autoCompleteMenu: true,
         autoCompleteHint: true,
         cancelable: true,
@@ -109,7 +114,7 @@ function parse(code: string) {
 
 const sleep = (i: number) => {
   var waitTill = new Date(new Date().getTime() + i);
-  while (waitTill > new Date()) { }
+  while (waitTill > new Date()) {}
 };
 
 function exit() {
@@ -133,15 +138,11 @@ async function doEval() {
 
     if (Number.isNaN(check)) {
       console.log(Err("SyntaxError", "Unmatched bracket in REPL-Only"));
-      
+
       process.exit(0);
-    }
-
-    else if (check === 0) {
+    } else if (check === 0) {
       code += code !== "" ? " " + str : str;
-    }
-
-    else {
+    } else {
       code += code !== "" ? " " + str : str;
 
       await getCode("  ".repeat(check) + "... ".gray);
@@ -192,10 +193,10 @@ function doRun(where?: string, print: boolean = true) {
     where += fs.existsSync(where + ".ln")
       ? ".ln"
       : fs.existsSync(where + ".lnx")
-        ? ".lnx"
-        : ".ln"; 
+      ? ".lnx"
+      : ".ln";
   }
- 
+
   let pathDetails = PATH.parse(where);
 
   let fileName = pathDetails.base;
@@ -207,12 +208,13 @@ function doRun(where?: string, print: boolean = true) {
 
   cls(() => {
     if (fileName) {
-      print && terminal.green(
-        `\n🧠 Evaluating '${fileName}' from: '${PATH.join(
-          fileDir,
-          fileName
-        )}'\n`
-      );
+      print &&
+        terminal.green(
+          `\n🧠 Evaluating '${fileName}' from: '${PATH.join(
+            fileDir,
+            fileName
+          )}'\n`
+        );
     } else print && terminal.green(`\n🧠 Evaluating '${fileDir}'\n`);
     print && sleep(500);
 
@@ -237,7 +239,8 @@ function doRun(where?: string, print: boolean = true) {
       cls(() => {
         function askAgain() {
           terminal.slowTyping(
-            `\nMissing '${fileName}' file in '${fileDir === "." ? "/" : fileDir
+            `\nMissing '${fileName}' file in '${
+              fileDir === "." ? "/" : fileDir
             }'\n`,
             {
               flashStyle: terminal.brightWhite,
@@ -247,7 +250,7 @@ function doRun(where?: string, print: boolean = true) {
             async () => {
               sleep(1500);
 
-              cls(() => { });
+              cls(() => {});
               let str = await ask(
                 `\n🌙 Luna file path ["exit": exit] ⟹  `.green
               );
@@ -260,8 +263,8 @@ function doRun(where?: string, print: boolean = true) {
                   path += fs.existsSync(path + ".ln")
                     ? ".ln"
                     : fs.existsSync(where + ".lnx")
-                      ? ".lnx"
-                      : ".ln";
+                    ? ".lnx"
+                    : ".ln";
                 }
 
                 pathDetails = PATH.parse(path);
@@ -326,8 +329,8 @@ async function doCompile(where?: string) {
     where += fs.existsSync(where + ".ln")
       ? ".ln"
       : fs.existsSync(where + ".lnx")
-        ? ".lnx"
-        : ".ln";
+      ? ".lnx"
+      : ".ln";
   }
 
   let pathDetails = PATH.parse(where);
@@ -396,7 +399,6 @@ async function doCompile(where?: string) {
                   );
 
                   console.log("file saved at: " + PATH.join(fileDir, dest));
-                  
                 } catch (e: any) {
                   console.log(e.stack || e);
                 }
@@ -435,15 +437,20 @@ function input() {
     var text =
       "\n" +
       `${"<file.ln>".yellow} : Execute Luna file.\n\n` +
-      `   [${"-c".cyan} 🌙 ${"--compile".cyan}] ${"<file.ln>".yellow} : ${"Compile Luna File into Motherlang.".italic
+      `   [${"-c".cyan} 🌙 ${"--compile".cyan}] ${"<file.ln>".yellow} : ${
+        "Compile Luna File into Motherlang.".italic
       }\n` +
-      `   [${"-y".cyan} 🌙 ${"--yes".cyan}]               : ${"Enter REPL Mode.".italic
+      `   [${"-y".cyan} 🌙 ${"--yes".cyan}]               : ${
+        "Enter REPL Mode.".italic
       }\n` +
-      `   [${"-n".cyan} ${"🌙".cyan} ${"--no".cyan}]                : ${"Execute default Luna index file 'index.ln'.".italic
+      `   [${"-n".cyan} ${"🌙".cyan} ${"--no".cyan}]                : ${
+        "Execute default Luna index file 'index.ln'.".italic
       }\n` +
-      `   [${"-h".cyan} ${"🌙".cyan} ${"--help".cyan}]              : ${"Show Luna help menu (this).".italic
+      `   [${"-h".cyan} ${"🌙".cyan} ${"--help".cyan}]              : ${
+        "Show Luna help menu (this).".italic
       }\n` +
-      `   [${"-v".cyan} ${"🌙".cyan} ${"--version".cyan}]           : ${"Show the current version of Luna.".italic
+      `   [${"-v".cyan} ${"🌙".cyan} ${"--version".cyan}]           : ${
+        "Show the current version of Luna.".italic
       }\n` +
       `\n`;
 
@@ -484,12 +491,12 @@ function input() {
   }
 }
 
-let fast = true
+let fast = true;
 
-if (!fast) terminal.slowTyping(
-  `${systemDefaults.name} REPL → Type "exit" to leave.\n`,
-  { flashStyle: terminal.brightWhite, delay: 5, style: terminal.yellow },
-  input
-);
-
+if (!fast)
+  terminal.slowTyping(
+    `${systemDefaults.name} REPL → Type "exit" to leave.\n`,
+    { flashStyle: terminal.brightWhite, delay: 5, style: terminal.yellow },
+    input
+  );
 else input();
