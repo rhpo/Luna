@@ -340,6 +340,7 @@ async function main(argums: string[]) {
           exit();
           return MK.void();
         }, "ExitFunc"),
+        override: true,
       },
     ]);
 
