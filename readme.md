@@ -258,6 +258,24 @@ a = lambda x y {
   x + y
 }
 
+# OR: Add a colon after the fn keyword ':'
+a = fn: x y {
+  x + y
+}
+
+# Inline function:
+
+fn sum x y: x + y
+
+# Inline anonymous function:
+sum = lambda x y: x + y
+# OR:
+sum = fn: x y: x + y
+
+# Anonymous function without arguments:
+f = lambda: print('hello!')
+f =     fn::print('hello!')
+
 ```
 
 #### ✱ Actions in Luna 🌙
