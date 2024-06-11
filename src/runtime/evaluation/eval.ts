@@ -501,25 +501,13 @@ export function evaluateUseStatement(
     }
   }
 
-  let childEnv = createContext([]);
+  let childEnv = new Environment(env);
 
   try {
     let ast = new Luna().produceAST(code);
+    let c = evaluate(ast, env);
 
-    let c = evaluate(ast, childEnv);
-
-    let variables = new Map(
-      [...childEnv.variables.entries()].filter(([_key, value]) => {
-        if (
-          value.type === "fn" ||
-          value.type === "native-fn" ||
-          value.type === "function"
-        ) {
-          (value as FNVal).declarationEnv = childEnv;
-        }
-        return value.export;
-      })
-    );
+    let variables = resolveExports(ast, env, originalPath);
 
     if (Array.isArray(imports)) {
       imports.forEach((i) => {
