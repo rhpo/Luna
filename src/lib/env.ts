@@ -103,6 +103,8 @@ export default class Environment {
 
         name.properties = name.properties.map((prop) => {
           if (prop.kind !== "StringLiteral") {
+            console.log(env);
+            console.log(this);
             return {
               kind: "StringLiteral",
               value: evaluate(prop, this).value as string,

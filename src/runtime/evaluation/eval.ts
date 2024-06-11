@@ -1051,12 +1051,13 @@ export function evaluateAssignment(
     });
   }
 
-  env.parent &&
-    env.parent.declareVar(
-      (assignment.assigne?.value as string) ||
-        (assignment.assigne as MemberExprX),
-      value
-    );
+  // ! CAUSED PROBLEM, MIGHT ENABLE BACK, MIGHT NOT :D !
+  // env.parent &&
+  //   env.parent.declareVar(
+  //     (assignment.assigne?.value as string) ||
+  //       (assignment.assigne as MemberExprX),
+  //     value
+  //   );
 
   // declareVar as the memberexprX
   return env.declareVar(
