@@ -8,6 +8,7 @@ import { KEYWORDS } from "./lib/tokenizer";
 import { exec } from "pkg";
 import beautify from "js-beautify/js";
 import keypress from "keypress";
+import openFile from "open-file-explorer";
 import os from "os";
 
 process.argv = process.argv.filter((c) => {
@@ -25,6 +26,7 @@ import {
   resolveExports,
 } from "./runtime/evaluation/eval";
 import Environment from "./lib/env";
+import childProcess from "child_process";
 
 let code: string;
 let history: string[] = [];
@@ -229,6 +231,39 @@ async function main(argums: string[]) {
       `Base Directory ${basedir} doesn't exist. Please run \`luna doctor\``
     );
   } else {
+    if (args[0] == "core") {
+      console.log(`Opening '${basedir}'...`);
+      return openFile(basedir, (error: any) => {
+        if (error) {
+          return console.log(
+            `Error Opening '${basedir}', try running \`${systemDefaults.name.toLowerCase()} doctor\``
+          );
+        }
+      });
+    } else if (args[0] == "help") {
+      console.log(
+        `Usage: ${systemDefaults.name.toLowerCase()} [command] [file] [options]`
+      );
+      console.log(
+        `Commands: \n\tcompile \n\tbuild \n\tcore \n\tdoctor \n\thelp \n\tversion`
+      );
+      console.log(
+        `Options: \n\t--target \n\t--output \n\t--version \n\t--help \n\t--core`
+      );
+      return;
+    } else if (args[0] == "version") {
+      return console.log(`Version: ${systemDefaults.version}`);
+    } else if (args[0] == "config") {
+      console.log("Opening config file...");
+      return openFile(PATH.join(basedir, "config.lnx"), (error: any) => {
+        if (error) {
+          return console.log(
+            `Error Opening '${basedir}', try running \`${systemDefaults.name.toLowerCase()} doctor\``
+          );
+        }
+      });
+    }
+
     let defaultConfig = "";
     if (!fs.existsSync(PATH.join(basedir, "config.lnx")))
       fs.writeFileSync(PATH.join(basedir, "config.lnx"), defaultConfig);

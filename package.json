@@ -1,10 +1,12 @@
 {
   "dependencies": {
     "@types/keypress": "^2.0.30",
+    "@types/open-file-explorer": "^1.0.2",
     "@types/prompt-sync": "^4.2.0",
     "colors": "^1.4.0",
     "js-beautify": "^1.14.11",
     "keypress": "^0.2.1",
+    "open-file-explorer": "^1.0.2",
     "pkg": "^5.8.1",
     "prompt-sync": "^4.2.0",
     "rcedit": "^3.1.0",
