@@ -1052,12 +1052,16 @@ export function evaluateAssignment(
   }
 
   // ! CAUSED PROBLEM, MIGHT ENABLE BACK, MIGHT NOT :D !
-  // env.parent &&
-  //   env.parent.declareVar(
-  //     (assignment.assigne?.value as string) ||
-  //       (assignment.assigne as MemberExprX),
-  //     value
-  //   );
+  /// Enabled it back, because it's causing problems with the assignments inside if statements
+  if (["if"].includes(env.properties.in as string))
+    try {
+      env.parent &&
+        env.parent.declareVar(
+          (assignment.assigne?.value as string) ||
+            (assignment.assigne as MemberExprX),
+          value
+        );
+    } catch {}
 
   // declareVar as the memberexprX
   return env.declareVar(
