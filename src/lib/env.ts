@@ -4,10 +4,12 @@ import { evaluate } from "../runtime/interpreter";
 import { FNVal, MK, ObjectValue, PROTO, RuntimeValue } from "../runtime/values";
 import {
   ArrayLiteral,
+  Expression,
   MemberExpr,
   MemberExprX,
   ReactRequirements,
   Statement,
+  StringLiteral,
 } from "./ast";
 import { Err } from "./error";
 import systemDefaults from "./sys";
@@ -99,6 +101,15 @@ export default class Environment {
       if (mainObj.type === "object") {
         let properties = mainObj.properties;
 
+        name.properties = name.properties.map((prop) => {
+          if (prop.kind !== "StringLiteral") {
+            return {
+              kind: "StringLiteral",
+              value: evaluate(prop, this).value as string,
+            } as StringLiteral as Expression;
+          } else return prop;
+        });
+
         if (properties) {
           let lastone: RuntimeValue = mainObj as RuntimeValue;
 
@@ -123,14 +134,34 @@ export default class Environment {
             value
           );
         }
-        //(mainObj.type === "array")
       } else {
         let array: RuntimeValue[] = mainObj.value;
 
         if (name.properties.length === 1) {
-          array[name.properties[0].value as any] = value;
+          array[evaluate(name.properties[0], this).value] = value;
         } else {
-          // don't know how to handle this yet...
+          let lastone: RuntimeValue = mainObj as RuntimeValue;
+
+          for (let i = 0; i < name.properties.length - 1; i++) {
+            // BUG; it doesn't support evaluating expressions...
+            // let prop = name.properties[i].value;
+
+            let prop = evaluate(name.properties[i], env).value as string;
+
+            if (lastone.properties?.has(prop)) {
+              lastone = lastone.properties.get(prop) as RuntimeValue;
+            } else {
+              let obj = MK.object({});
+
+              lastone.properties?.set(prop, obj);
+              lastone = obj;
+            }
+          }
+
+          lastone.properties?.set(
+            name.properties[name.properties.length - 1].value,
+            value
+          );
         }
 
         mainObj.value = array;
