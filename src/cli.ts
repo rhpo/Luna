@@ -333,6 +333,14 @@ async function main(argums: string[]) {
         value,
         override: true,
       })),
+
+      {
+        name: "exit",
+        value: MK.nativeFunc(() => {
+          exit();
+          return MK.void();
+        }, "ExitFunc"),
+      },
     ]);
 
     env.parent = myEnv;
