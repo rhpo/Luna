@@ -148,8 +148,6 @@ function setupKey() {
 }
 
 async function cli() {
-  setupKey();
-
   let code = "";
 
   async function getCode(prompt = ">> ") {
@@ -198,6 +196,8 @@ let welcome =
   `\nType ${"exit()".underline.green.dim} ${"to leave...".gray}`.gray;
 
 async function main(argums: string[]) {
+  setupKey();
+
   const args = argums.slice(argums[0].includes("node") ? 2 : 1);
   // let switches = args.filter((x) => x.startsWith("-"));
 
