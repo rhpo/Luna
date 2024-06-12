@@ -1,2 +1,2 @@
 
-
+use "test/keypress.ln" as keypress

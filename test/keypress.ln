@@ -1,0 +1,4 @@
+
+keypress(fn: key {
+    print(key.name)
+})

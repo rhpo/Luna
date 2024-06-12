@@ -440,7 +440,6 @@ export function evaluateUseStatement(
 
     tempPath = originalPath;
     originalPath = PATH.join(originalPath, fileDir);
-
     let finalPath = PATH.join(originalPath, fileName);
 
     function isFile(path: string): boolean {
@@ -505,7 +504,6 @@ export function evaluateUseStatement(
 
   try {
     let ast = new Luna().produceAST(code);
-    let c = evaluate(ast, env);
 
     let variables = resolveExports(ast, env, originalPath);
 
@@ -543,7 +541,7 @@ export function evaluateUseStatement(
 
     originalPath = tempPath;
 
-    return c;
+    return MK.void();
   } catch (e) {
     throw e + "\n  at → ".blue + originalPath;
   }
@@ -1281,21 +1279,21 @@ export function evaluateNumericalAssignmentExpression(
   assignment: NumericalAssignmentExpression,
   env: Environment
 ) {
-  let assigne = assignment.assigne;
+  let { operator, assigne } = assignment;
   let assigneValue = evaluate(assigne, env).value;
 
   let right = evaluate(assignment.value, env).value;
 
-  let { operator } = assignment;
+  let v = assigne.kind === "MemberExprX" ? assigne : assigne.value;
 
   if (!["&=", "|="].includes(operator)) {
     return env.declareVar(
-      assigne.value,
+      v,
       evalNumericBE(assigneValue, right, operator.substring(0, 1))
     );
   } else
     return env.declareVar(
-      assigne.value,
+      v,
       evalLogicalBE(assigneValue, right, operator.substring(0, 1))
     );
 }
