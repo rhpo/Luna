@@ -1,5 +1,5 @@
 ###### NOTE: This README.md file temporarily placeholdes the repo, please be patient for the author to document Luna and refer to the code below at the meanwhile.
-###### Any collaborator who's able to convert the TS project to C/C++ (or a low-level language) will be credited as a co-Author of the Luna programming langauge.
+###### Any collaborator who's able to convert the TS project to C/C++ (or a low-level language) will be rewarded by getting credited as a co-Author of the Luna programming language.
 
 # Luna 🌙 &nbsp;&horbar;&nbsp; A High-Level Programming language.
 
