@@ -414,14 +414,12 @@ The above copyright notice and this permission notice shall be included in all c
 <h1 name="about-author">👤 About the author:</h1>
 <ul>
     <p>&bull; Name &nbsp;&horbar;&nbsp; Ramy Hadid.</p>
-    <p>&bull; Age &nbsp;&horbar;&nbsp; 18 years old.</p>
     <p>&bull; Nationality &nbsp;&horbar;&nbsp; 🇩🇿 Algeria.</p>
     <p>&bull; Linkedin &nbsp;&horbar;&nbsp; <a href="https://www.linkedin.com/in/ramy-hadid-15aa70243/">(Ramy Hadid)</a></p>
-    <p>&bull; Instagram &nbsp;&horbar;&nbsp; <a href="https://www.linkedin.com/in/ramy-hadid-15aa70243/">@ramyhadid</a></p>
-        <p>&bull; Discord &nbsp;&horbar;&nbsp; <a href="https://discord.com/users/751901651622690927">ramy#1539</a></p>
+    <p>&bull; Discord &nbsp;&horbar;&nbsp; <a href="https://discord.com/users/751901651622690927">@rhpo</a></p>
     <p>&bull; GitHub &nbsp;&horbar;&nbsp; <a href="https://www.github.com/rhpo">@rhpo</a></p>
-    <p>&bull; Email (personal) &nbsp;&horbar;&nbsp; <a href="mailto:me@ramey.ml">me@ramey.ml</a></p>
-    <p>&bull; Programming Languages &nbsp;&horbar;&nbsp; C# &bull; Ruby &bull; TypeScript &bull; Python &bull; LunaScript.</p>
+    <p>&bull; Email (personal) &nbsp;&horbar;&nbsp; <a href="mailto:me@ramey.ml">ramyhadid.js@gmail.com</a></p>
+    <p>&bull; Programming Languages &nbsp;&horbar;&nbsp; C#/C/C++ &bull; GoLang &bull; TypeScript &bull; NodeJS &bull; LunaScript.</p>
 </ul>
 
 <br>
