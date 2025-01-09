@@ -418,7 +418,7 @@ The above copyright notice and this permission notice shall be included in all c
     <p>&bull; Linkedin &nbsp;&horbar;&nbsp; <a href="https://www.linkedin.com/in/ramy-hadid-15aa70243/">(Ramy Hadid)</a></p>
     <p>&bull; Discord &nbsp;&horbar;&nbsp; <a href="https://discord.com/users/751901651622690927">@rhpo</a></p>
     <p>&bull; GitHub &nbsp;&horbar;&nbsp; <a href="https://www.github.com/rhpo">@rhpo</a></p>
-    <p>&bull; Email (personal) &nbsp;&horbar;&nbsp; <a href="mailto:me@ramey.ml">ramyhadid.js@gmail.com</a></p>
+    <p>&bull; Email (personal) &nbsp;&horbar;&nbsp; <a href="mailto:ramyhadid.js@gmail.com">ramyhadid.js@gmail.com</a></p>
     <p>&bull; Programming Languages &nbsp;&horbar;&nbsp; C#/C/C++ &bull; GoLang &bull; TypeScript &bull; NodeJS &bull; LunaScript.</p>
 </ul>
 
