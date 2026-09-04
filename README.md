@@ -1,5 +1,4 @@
-###### NOTE: This README.md file temporarily placeholdes the repo, please be patient for the author to document Luna and refer to the code below at the meanwhile.
-###### Any collaborator who's able to convert the TS project to C/C++ (or a low-level language) will be rewarded by getting credited as a co-Author of the Luna programming language.
+###### NOTE: THIS PROJECT HAS BEEN PORTED TO [Goluna](https://github.com/rhpo/goluna), A Go programming language rewrite of Luna, TypeScript version is deprecated.
 
 # Luna 🌙 &nbsp;&horbar;&nbsp; A High-Level Programming language.
 
